@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+/* Aucun style navigateur par défaut sur les contrôles (flèches de select,
+ * arrondis iOS, déco search…), scopé à la vitrine (l'admin garde ses styles). */
+.vt-root button,
+.vt-root input,
+.vt-root select,
+.vt-root textarea {
+  appearance: none;
+  -webkit-appearance: none;
+}
+.vt-root input[type="search"]::-webkit-search-decoration,
+.vt-root input[type="search"]::-webkit-search-cancel-button,
+.vt-root input[type="search"]::-webkit-search-results-button,
+.vt-root input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+ * Design system Üsküdar Travel — Admin (§3.1)
+ * Dashboard type Vercel : fond quasi-blanc, texte near-black, Geist Sans,
+ * bordures 1px basse-contraste, accents bleu marine + or de la marque.
+ */
+
+@theme {
+  /* Marque (dérivée du logo) */
+  --color-navy: #1f2a7a;
+  --color-navy-hover: #18215e;
+  --color-navy-active: #131b4c;
+  --color-navy-soft: #eceefb;
+  --color-navy-border: #c7cdf1;
+  --color-gold: #d4a017;
+  --color-gold-hover: #b88c10;
+  --color-gold-soft: #faf3de;
+
+  /* Neutres */
+  --color-page: #fafafa;
+  --color-surface: #ffffff;
+  --color-line: #e5e5e5;
+  --color-line-strong: #d4d4d4;
+  --color-ink: #171717;
+  --color-ink-secondary: #444444;
+  --color-ink-muted: #737373;
+  --color-ink-faint: #a3a3a3;
+
+  /* Sémantique */
+  --color-success: #15803d;
+  --color-success-soft: #ecfdf3;
+  --color-success-border: #bbf7d0;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-warning: #b45309;
+  --color-warning-soft: #fffbeb;
+  --color-warning-border: #fde68a;
+
+  /* Vitrine — palette « Jetset Modern » (l'admin conserve navy/or) */
+  --color-cobalt: #2563eb;
+  --color-cobalt-hover: #1d4ed8;
+  --color-cobalt-active: #1e40af;
+  --color-cobalt-soft: #eef4fe;
+  --color-ice: #e2e8f0;
+  --color-ice-strong: #cbd5e1;
+  --color-citrine: #facc15;
+  --color-citrine-hover: #eab308;
+  --color-night: #0f172a;
+  --color-night-soft: #334155;
+  --color-night-muted: #64748b;
+  --color-night-faint: #94a3b8;
+  --color-whatsapp: #25d366;
+  --color-whatsapp-hover: #1eb85a;
+
+  --radius-default: 0.5rem;
+}
+
+/* Racine de la vitrine : focus ring cobalt (l'admin garde son navy). */
+.vt-root :where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline-color: var(--color-cobalt);
+}
+
+/* Apparition au défilement — activée seulement si JS est disponible
+   (html.vt-js est posé par un script inline avant le premier paint). */
+html.vt-js [data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+html.vt-js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.vt-js [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Masque les barres de défilement des rangées à défilement horizontal. */
+.vt-no-scrollbar {
+  scrollbar-width: none;
+}
+.vt-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Menu mobile plein écran : entrée en cascade des liens (le menu ne peut
+ * s'ouvrir que côté client, donc aucune contrainte no-JS ici). */
+@keyframes vt-menu-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.vt-menu-item {
+  animation: vt-menu-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vt-menu-item {
+    animation: none;
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Focus ring cohérent sur tout composant interactif. */
+:where(a, button, input, select, textarea, [role="button"], [role="listbox"], [role="option"]):focus-visible {
+  outline: 2px solid var(--color-navy);
+  outline-offset: 2px;
+}
+
+/* Scrollbars fines (webkit) pour les zones à défilement de l'admin. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}

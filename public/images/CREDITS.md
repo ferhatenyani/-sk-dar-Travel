@@ -1,0 +1,27 @@
+# Crédits photos (banque gratuite Pexels — licence Pexels, usage commercial OK)
+
+- hero.webp — https://www.pexels.com/photo/3889704/
+- tr-istanbul.webp — https://www.pexels.com/photo/12776938/
+- tr-cappadoce.webp — https://www.pexels.com/photo/3185493/
+- tr-pamukkale.webp — https://www.pexels.com/photo/6027880/
+- tn-sidi.webp — https://www.pexels.com/photo/29679525/
+- tn-douz.webp — https://www.pexels.com/photo/2114984/
+- tn-eljem.webp — https://www.pexels.com/photo/3274752/
+- eg-pyramides.webp — https://www.pexels.com/photo/35453890/
+- eg-louxor.webp — https://www.pexels.com/photo/3214972/
+- eg-nil.webp — https://www.pexels.com/photo/1755390/
+- my-petronas.webp — https://www.pexels.com/photo/13029916/
+- my-batu.webp — https://www.pexels.com/photo/3731615/
+- my-mosquee.webp — https://www.pexels.com/photo/326716/
+- dz-constantine.webp — https://www.pexels.com/photo/15404649/
+- dz-gorges.webp — https://www.pexels.com/photo/33630736/
+- dz-alger.webp — https://www.pexels.com/photo/1281669/
+- dz-casbah.webp — https://www.pexels.com/photo/13682900/
+- sv-organises.webp — https://www.pexels.com/photo/6181059/
+- sv-sur-mesure.webp — https://www.pexels.com/photo/346885/
+- sv-hotellerie.webp — https://www.pexels.com/photo/338504/
+- sv-billetterie.webp — https://www.pexels.com/photo/37644602/
+- sv-transferts.webp — https://www.pexels.com/photo/20993514/
+- sv-assurance.webp — https://www.pexels.com/photo/1128318/
+- about-1.webp — https://www.pexels.com/photo/2325447/
+- about-2.webp — https://www.pexels.com/photo/11092342/
