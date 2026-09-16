@@ -1,13 +1,13 @@
 // Accueil — hero « carte pleine page » façon inspi3 : une photo aux coins
 // arrondis sous la barre de navigation (voir site-header), voile dégradé et
-// contenu (titre + CTAs) en bas à gauche. Le carrousel des destinations
-// vit sous la carte. Le reste de la page est piloté par le CMS.
+// contenu (titre + CTAs) en bas à gauche. Les destinations défilent
+// automatiquement dans la carte (hero-carousel, points de pagination en
+// bas), et le carrousel des destinations vit sous la carte. Le reste de la
+// page est piloté par le CMS.
 import Image from "next/image";
-import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import {
   ArrowRight,
-  ArrowUpRight,
   Check,
 
   Sparkles,
@@ -17,7 +17,7 @@ import { db } from "@/db";
 import { services } from "@/db/schema";
 import { ContactSection } from "@/components/vitrine/contact-section";
 import { DestinationStrip } from "@/components/vitrine/destination-panel";
-import { ContactButton } from "@/components/vitrine/site-header";
+import { HeroCarousel, type HeroSlide } from "@/components/vitrine/hero-carousel";
 import {
   ButtonLink,
   Container,
@@ -30,6 +30,7 @@ import {
   destinationImage,
   siteUrl,
   vitrineSettings,
+  waDestinationLink,
   waLink,
   waServiceLink,
   WA_MESSAGE,
@@ -88,6 +89,28 @@ export default async function HomePage() {
           imageUrl: destinationImage(d.slug),
         }));
 
+  // Diapositives du hero : la diapo d'accueil (contenu CMS) puis une par
+  // destination (photo = première carte publiée de la section galerie),
+  // avec un message WhatsApp prérempli propre à chaque destination.
+  const heroSlides: HeroSlide[] = [
+    {
+      slug: "accueil",
+      label: "L'agence",
+      headline: heroHeadline(settings.heroTitle),
+      text: settings.heroText,
+      imageUrl: settings.heroImageUrl,
+      waMessage: WA_MESSAGE,
+    },
+    ...destinations.map((d) => ({
+      slug: d.slug,
+      label: d.title,
+      headline: `Partez en ${d.title}`,
+      text: `Nos séjours organisés et sur-mesure en ${d.title} : vols, hôtels et transferts pris en charge depuis Sétif.`,
+      imageUrl: d.imageUrl,
+      waMessage: waDestinationLink(settings.whatsappNumber, d.title),
+    })),
+  ];
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "TravelAgency",
@@ -110,54 +133,9 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* ——— Hero façon inspi3 : carte photo pleine largeur, contenu en bas ——— */}
+      {/* ——— Hero façon inspi3 : carte photo, destinations en défilement auto ——— */}
       <div className="w-full px-4 pt-1.5 sm:px-6 sm:pt-2 lg:px-10 lg:pt-2.5">
-        <div className="relative h-[76svh] max-h-[800px] min-h-[540px] w-full overflow-hidden rounded-[16px] sm:rounded-[20px] lg:h-[min(86svh,840px)] lg:min-h-[620px]">
-          <Image
-            src={settings.heroImageUrl}
-            alt="Paysage de destination proposé par Üsküdar Travel"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-          {/* Voile : assombrit le bas pour la lisibilité du contenu */}
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-t from-night/90 via-night/25 to-night/10"
-          />
-
-          {/* Contenu : titre, accroche, CTAs */}
-          <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-7 sm:px-8 sm:pb-10 lg:px-12 lg:pb-14">
-            <div className="max-w-2xl">
-              <Reveal>
-                <h1 className="text-balance text-[34px] font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[56px]">
-                  {heroHeadline(settings.heroTitle)}
-                </h1>
-              </Reveal>
-              <Reveal delay={150}>
-                <p className="mt-3 line-clamp-3 max-w-md text-[13px] leading-relaxed text-white/75 sm:mt-4 sm:text-[15px]">
-                  {settings.heroText}
-                </p>
-              </Reveal>
-              <Reveal delay={220}>
-                <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8 sm:gap-4">
-                  {/* CTA principal : pilule blanche + pastille flèche (inspi3) */}
-                  <Link
-                    href="/services"
-                    className="group inline-flex items-center gap-3 rounded-full bg-white py-1.5 pl-6 pr-1.5 text-sm font-semibold text-night shadow-[0_18px_40px_-16px_rgba(15,23,42,0.65)] transition-all duration-200 hover:bg-ice active:scale-[0.98]"
-                  >
-                    Composer mon voyage
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-night text-white transition-transform duration-300 group-hover:rotate-45">
-                      <ArrowUpRight className="h-4 w-4" />
-                    </span>
-                  </Link>
-                  <ContactButton onDark />
-                </div>
-              </Reveal>
-            </div>
-          </div>
-        </div>
+        <HeroCarousel slides={heroSlides} whatsappNumber={settings.whatsappNumber} />
       </div>
 
       {/* ——— Destinations : carrousel sous le hero (inspi3) ——— */}

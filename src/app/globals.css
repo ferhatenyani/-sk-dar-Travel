@@ -128,6 +128,101 @@ html.vt-js [data-reveal].is-visible {
   }
 }
 
+/*
+ * Carrousel du hero (hero-carousel.tsx) : la diapositive sortante reste en
+ * place (fondu par transition d'opacité), l'entrante est animée en CSS —
+ * dérive directionnelle (--vt-drift, posé par le composant) puis Ken Burns
+ * sur la durée d'une diapositive (--vt-hero-ms). Le titre est révélé par
+ * masque (montée depuis un bloc overflow-hidden), le texte en fondu.
+ */
+@keyframes vt-hero-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--vt-drift, 3%));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes vt-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+@keyframes vt-hero-rise {
+  from {
+    transform: translateY(110%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes vt-hero-fade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes vt-chip-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.vt-hero-slide {
+  opacity: 0;
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.vt-hero-slide.is-active {
+  opacity: 1;
+  z-index: 1;
+  animation: vt-hero-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.vt-hero-slide.is-active .vt-hero-img {
+  animation: vt-kenburns var(--vt-hero-ms, 6500ms) linear forwards;
+}
+.vt-hero-mask {
+  animation: vt-hero-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.vt-hero-fade {
+  animation: vt-hero-fade 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+.vt-hero-chip-active {
+  animation: vt-chip-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* Survol du CTA : le cercle flèche prend l'accent de la diapositive
+   (var --vt-accent posée par le composant). */
+.vt-hero-cta:hover .vt-hero-cta-circle {
+  background-color: var(--vt-accent, var(--color-night));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vt-hero-slide {
+    transition: none;
+  }
+  .vt-hero-slide.is-active,
+  .vt-hero-slide.is-active .vt-hero-img,
+  .vt-hero-mask,
+  .vt-hero-fade,
+  .vt-hero-chip-active {
+    animation: none;
+  }
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;

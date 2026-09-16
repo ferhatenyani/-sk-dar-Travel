@@ -45,6 +45,14 @@ export function waServiceLink(whatsappNumber: string, service: string): string {
   );
 }
 
+/** Lien WhatsApp prérempli avec la destination affichée dans le hero. */
+export function waDestinationLink(whatsappNumber: string, destination: string): string {
+  return waLink(
+    whatsappNumber,
+    `Bonjour Üsküdar Travel ! Je souhaite organiser un voyage en ${destination}. Pouvez-vous me faire un devis ?`,
+  );
+}
+
 /** Formats d'affichage des coordonnées. */
 export function telHref(phone: string): string {
   return `tel:${phone.replace(/[^+\d]/g, "")}`;

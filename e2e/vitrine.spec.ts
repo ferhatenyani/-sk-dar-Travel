@@ -64,9 +64,15 @@ test("accueil : hero pleine page, destinations, services, WhatsApp, images", asy
     page.locator('a[href^="https://wa.me/213770505715"]').first(),
   ).toBeVisible();
 
-  // Panneau des destinations (encoche du hero) + aperçu des destinations
+  // Carrousel du hero : points de pagination par destination + flèches ;
+  // la diapositive suivante affiche un titre « Partez en … »
   await expect(
-    page.getByRole("link", { name: "Destination Turquie" }).first(),
+    page.getByRole("button", { name: "Aller à la destination Turquie" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Destination suivante" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Partez en");
+  await expect(
+    page.getByRole("button", { name: /le défilement automatique/ }),
   ).toBeVisible();
 
   // Les 6 services publiés, chacun lié à WhatsApp
