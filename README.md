@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Üsküdar Travel — site vitrine + administration
 
-## Getting Started
+Site Next.js (App Router) en deux parties :
 
-First, run the development server:
+- **Vitrine publique** (`/`) : accueil, à propos, services, galerie — contenu piloté par un mini-CMS, ISR 60 s ;
+- **Administration** (`/admin`) : gestion des services, de la galerie, des contenus et du compte, protégée par better-auth (e-mail + mot de passe).
+
+Stack : Next.js 16 · React 19 · Tailwind CSS 4 · Drizzle ORM + Neon (PostgreSQL serverless) · better-auth · UploadThing · Resend. Package manager : **pnpm**.
+
+## Développement local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local   # puis renseigner les valeurs (voir ci-dessous)
+pnpm db:push                 # crée le schéma sur la base (Neon)
+pnpm db:seed                 # données de départ + admin (nécessite ADMIN_EMAIL/ADMIN_PASSWORD)
+pnpm dev                     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Tests de bout en bout (build de prod + Playwright) :
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm test:e2e
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Variables d'environnement
 
-## Learn More
+| Variable | Requis | Moment | Rôle |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | ✅ | **build + runtime** | Neon PostgreSQL (chaîne *pooled*, `sslmode=require`). Les pages publiques sont pré-rendues au build → la base doit être joignable à ce moment. |
+| `NEXT_PUBLIC_SITE_URL` | ✅ en prod | **build + runtime** | URL publique canonique (sitemap, robots, JSON-LD). |
+| `BETTER_AUTH_SECRET` | ✅ | runtime | Secret de signature des sessions (`openssl rand -base64 32`). |
+| `BETTER_AUTH_URL` | ✅ en prod | runtime | URL de base de l'auth (ex. `https://votre-site.netlify.app`). |
+| `UPLOADTHING_TOKEN` | ✅ (uploads) | runtime | Upload des images admin (cartes galerie, logo, hero). Sans lui, le site fonctionne mais pas d'upload. |
+| `RESEND_API_KEY` | optionnel | runtime | Envoi des e-mails (demandes de contact, reset password). Sans clé : les envois sont ignorés (warning) sans faire échouer la demande. |
+| `CONTACT_NOTIFICATION_EMAIL` | optionnel | runtime | Destinataire des notifications de contact. |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | seed uniquement | scripts | Compte admin initial créé par `pnpm db:seed` (local). |
 
-To learn more about Next.js, take a look at the following resources:
+## Déploiement Netlify
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+La configuration Netlify est prête : [`netlify.toml`](../netlify.toml) à la racine du dépôt (base `site/`, build `pnpm build`, runtime officiel `@netlify/plugin-nextjs`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Pousser le dépôt sur GitHub, puis sur Netlify : **Add new site → Import an existing project**.
+2. Netlify lit `netlify.toml` — ne rien changer à build/publish. Il suffit de définir les **variables d'environnement** (Site settings → Environment variables) : celles marquées ✅ du tableau ci-dessus, avec les URL de prod dans `NEXT_PUBLIC_SITE_URL` et `BETTER_AUTH_URL`.
+3. Déployer. À chaque push sur la branche de prod, build + déploiement automatiques.
 
-## Deploy on Vercel
+Notes de fonctionnement sur Netlify :
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **ISR / SSR / server actions** sont gérés par le runtime Netlify Next.js ; `next/image` passe par le Netlify Image CDN (aucune config).
+- Le garde d'auth `src/proxy.ts` (ex-middleware Next 16) ne fait qu'un test de présence de cookie : compatible edge, aucune dépendance Node.
+- Après le premier déploiement, mettre à jour `BETTER_AUTH_URL` et `NEXT_PUBLIC_SITE_URL` si le nom de site Netlify change ou après ajout d'un domaine custom, puis redéployer.
+- Migrations de base : à lancer manuellement depuis la machine de dev (`pnpm db:push` ou `pnpm db:migrate`) — la base Neon est partagée entre local et prod.

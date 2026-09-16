@@ -41,6 +41,9 @@ yarn-error.log*
 next-env.d.ts
 !.env.example
 
+# netlify cli (builds locaux)
+.netlify/
+
 # playwright
 test-results/
 playwright-report/

@@ -28,6 +28,7 @@ import { ServiceCard, type ServiceCardData } from "@/components/vitrine/service-
 import { getPublishedGallery, getSettings } from "@/lib/public-data";
 import {
   destinationImage,
+  siteUrl,
   vitrineSettings,
   waLink,
   waServiceLink,
@@ -92,7 +93,7 @@ export default async function HomePage() {
     "@type": "TravelAgency",
     name: "Üsküdar Travel",
     description: settings.seoDescription,
-    url: "http://localhost:3000",
+    url: siteUrl(),
     telephone: "+213770505715",
     email: settings.email,
     address: {
@@ -110,7 +111,7 @@ export default async function HomePage() {
       />
 
       {/* ——— Hero façon inspi3 : carte photo pleine largeur, contenu en bas ——— */}
-      <div className="w-full px-4 pt-2 sm:px-6 sm:pt-2.5 lg:px-10 lg:pt-3">
+      <div className="w-full px-4 pt-1.5 sm:px-6 sm:pt-2 lg:px-10 lg:pt-2.5">
         <div className="relative h-[76svh] max-h-[800px] min-h-[540px] w-full overflow-hidden rounded-[16px] sm:rounded-[20px] lg:h-[min(86svh,840px)] lg:min-h-[620px]">
           <Image
             src={settings.heroImageUrl}
@@ -294,11 +295,14 @@ async function HomeServices({ settings }: { settings: ReturnType<typeof vitrineS
   return (
     // Mobile : carrousel horizontal à accroche (pas d'empilement vertical) ;
     // sm+ : grille classique.
-    <div className="vt-no-scrollbar -mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pt-1 pb-4 sm:mx-0 sm:mt-10 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 lg:grid-cols-3">
+    <div className="vt-no-scrollbar -mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-ps-4 px-4 pt-1 pb-4 sm:mx-0 sm:mt-10 sm:auto-rows-fr sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:scroll-ps-0 sm:px-0 lg:grid-cols-3">
       {cards.map((service, i) => (
         <Reveal
           key={service.slug}
           delay={(i % 3) * 70}
+          // Pas de h-full ici : en flex, height:100% désactive le stretch
+          // qui aligne justement les hauteurs ; la carte (h-full) remplit
+          // l'item étiré.
           className="w-[78%] max-w-[320px] shrink-0 snap-center sm:w-auto sm:max-w-none sm:shrink"
         >
           <ServiceCard

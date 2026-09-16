@@ -39,7 +39,7 @@ export function ServiceCard({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Demander « ${service.title} » sur WhatsApp`}
-      className="group flex flex-row overflow-hidden rounded-3xl border border-ice bg-white transition-all duration-300 hover:-translate-y-1 hover:border-ice-strong hover:shadow-[0_24px_48px_-24px_rgba(15,23,42,0.25)] sm:flex-col"
+      className="group flex h-full flex-row overflow-hidden rounded-3xl border border-ice bg-white transition-all duration-300 hover:-translate-y-1 hover:border-ice-strong hover:shadow-[0_24px_48px_-24px_rgba(15,23,42,0.25)] sm:flex-col"
     >
       <span className="relative block w-[38%] shrink-0 self-stretch overflow-hidden sm:w-full sm:h-44">
         {service.imageUrl ? (

@@ -43,7 +43,7 @@ function GalleryCard({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Demander des informations sur « ${card.title} »`}
-      className={`group block ${staggered ? "lg:translate-y-6" : ""}`}
+      className={`group flex h-full flex-col ${staggered ? "lg:translate-y-6" : ""}`}
     >
       <figure className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-ice ring-1 ring-night/10 transition-shadow duration-300 group-hover:shadow-[0_28px_56px_-28px_rgba(15,23,42,0.45)]">
         <Image
@@ -146,7 +146,7 @@ export default async function GaleriePage() {
                     </div>
                   </Reveal>
 
-                  <div className="vt-no-scrollbar -mx-4 mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
+                  <div className="vt-no-scrollbar -mx-4 mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-ps-4 px-4 pb-4 sm:-mx-6 sm:scroll-ps-6 sm:px-6 lg:auto-rows-fr lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:scroll-ps-0 lg:px-0">
                     {section.cards.map((card, i) => (
                       <Reveal
                         key={card.title}

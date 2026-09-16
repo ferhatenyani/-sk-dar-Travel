@@ -49,10 +49,10 @@ export function ContactSection({ settings }: { settings: VitrineSettings }) {
               </p>
             </a>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:auto-rows-fr sm:grid-cols-2">
               <a
                 href={telHref(settings.phone)}
-                className="flex items-center gap-3 rounded-3xl border border-ice bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-ice-strong sm:flex-col sm:items-start sm:p-5"
+                className="flex h-full items-center gap-3 rounded-3xl border border-ice bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-ice-strong sm:flex-col sm:items-start sm:p-5"
               >
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cobalt-soft text-cobalt">
                   <Phone className="h-5 w-5" />
@@ -67,7 +67,7 @@ export function ContactSection({ settings }: { settings: VitrineSettings }) {
 
               <a
                 href={`mailto:${settings.email}`}
-                className="flex items-center gap-3 rounded-3xl border border-ice bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-ice-strong sm:flex-col sm:items-start sm:p-5"
+                className="flex h-full items-center gap-3 rounded-3xl border border-ice bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-ice-strong sm:flex-col sm:items-start sm:p-5"
               >
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cobalt-soft text-cobalt">
                   <Mail className="h-5 w-5" />

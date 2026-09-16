@@ -79,7 +79,7 @@ export default async function ServicesPage() {
               sur WhatsApp pour préparer votre voyage.
             </p>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
               {rows.map((service, i) => (
                 <Reveal key={service.id} delay={(i % 3) * 70}>
                   <ServiceCard
@@ -109,7 +109,7 @@ export default async function ServicesPage() {
               align="center"
             />
           </Reveal>
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="mt-10 grid gap-5 md:auto-rows-fr md:grid-cols-3">
             {STEPS.map((step, i) => (
               <Reveal key={step.title} delay={i * 80}>
                 <div className="relative h-full rounded-3xl border border-ice bg-white p-6">

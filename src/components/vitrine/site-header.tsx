@@ -366,7 +366,7 @@ export default function SiteHeader({ settings }: { settings: VitrineSettings }) 
       {/* Barre statique pleine largeur, au-dessus du contenu (toutes pages),
           sans filet : la barre et le hero ne font qu'un visuellement */}
       <header data-nav-sentinel className="bg-white">
-        <div className="mx-auto w-full max-w-6xl px-4 py-2.5 sm:px-6 lg:px-10">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-2.5 pb-1 sm:px-6 lg:px-10">
           <NavContent
             settings={settings}
             menuOpen={menuOpen}

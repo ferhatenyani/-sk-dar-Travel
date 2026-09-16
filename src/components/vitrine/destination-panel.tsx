@@ -131,7 +131,7 @@ export function DestinationStrip({ destinations }: { destinations: Destination[]
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className="vt-no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-4 sm:mx-0 sm:px-0"
+        className="vt-no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth scroll-ps-4 px-4 sm:mx-0 sm:scroll-ps-0 sm:px-0"
         aria-label="Nos destinations"
       >
         {destinations.map((d) => (

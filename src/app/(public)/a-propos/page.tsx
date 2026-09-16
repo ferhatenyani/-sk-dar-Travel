@@ -148,7 +148,7 @@ export default async function AProposPage() {
               align="center"
             />
           </Reveal>
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-5 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-4">
             {VALUES.map((value, i) => (
               <Reveal key={value.title} delay={i * 70}>
                 <div className="h-full rounded-3xl border border-ice bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-ice-strong hover:shadow-[0_24px_48px_-24px_rgba(15,23,42,0.25)]">
