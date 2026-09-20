@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import Link from "next/link";
 import { asc } from "drizzle-orm";
 
@@ -63,6 +64,7 @@ export default async function ServicesPage() {
               {service.imageUrl ? (
                 <Image
                   src={service.imageUrl}
+                  unoptimized={isUploadedImage(service.imageUrl)}
                   alt=""
                   width={64}
                   height={48}

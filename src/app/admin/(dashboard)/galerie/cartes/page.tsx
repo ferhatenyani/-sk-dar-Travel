@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 
@@ -79,6 +80,7 @@ export default async function CardsPage() {
                 {card.imageUrl ? (
                   <Image
                     src={card.imageUrl}
+                    unoptimized={isUploadedImage(card.imageUrl)}
                     alt={card.alt}
                     width={64}
                     height={48}

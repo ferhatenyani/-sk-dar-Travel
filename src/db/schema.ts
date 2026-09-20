@@ -90,7 +90,7 @@ export const voyages = pgTable("voyages", {
   description: text("description").notNull().default(""),
   /** Prix affiché tel quel (ex. « À partir de 89 000 DA ») — optionnel. */
   price: text("price"),
-  /** Image de couverture (WebP, upload UploadThing). */
+  /** Image de couverture (WebP, téléversée via /api/uploads). */
   imageUrl: text("image_url").notNull().default(""),
   /** Photos de galerie (0 à 6, URLs WebP). */
   galleryImages: text("gallery_images").array().notNull().default(sql`'{}'::text[]`),

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import Link from "next/link";
 import { MapPin, Phone } from "lucide-react";
 
@@ -24,6 +25,7 @@ export function SiteFooter({ settings }: { settings: VitrineSettings }) {
             <Link href="/" className="inline-flex items-center gap-2.5" aria-label="Üsküdar Travel — accueil">
               <Image
                 src={settings.logoUrl}
+                unoptimized={isUploadedImage(settings.logoUrl)}
                 alt=""
                 width={44}
                 height={44}

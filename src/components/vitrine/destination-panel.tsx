@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
@@ -24,6 +25,7 @@ function DestinationCard({ d, className }: { d: Destination; className: string }
       <span className="block aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-night/5">
         <Image
           src={d.imageUrl}
+          unoptimized={isUploadedImage(d.imageUrl)}
           alt={`Destination ${d.title}`}
           width={480}
           height={360}

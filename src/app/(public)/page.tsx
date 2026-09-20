@@ -163,8 +163,8 @@ export default async function HomePage() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <SectionHeading
                 eyebrow="Voyages organisés"
-                title="Nos prochains départs en groupe"
-                sub="Programme calé, prix ferme, équipement de rêve : choisissez votre date, on s'occupe du reste."
+                title="Nos prochains départs"
+                sub="Programme calé, prix ferme : choisissez votre date, on s'occupe du reste."
               />
               <ButtonLink href="/voyages-organises" variant="ghost">
                 Voir tous les voyages

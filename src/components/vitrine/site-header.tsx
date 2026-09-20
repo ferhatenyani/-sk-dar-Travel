@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -94,6 +95,7 @@ function Logo({
     >
       <Image
         src={settings.logoUrl}
+        unoptimized={isUploadedImage(settings.logoUrl)}
         alt=""
         width={38}
         height={38}

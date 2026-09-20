@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -120,6 +121,7 @@ export function SectionCardsPanel({
               {card.imageUrl ? (
                 <Image
                   src={card.imageUrl}
+                  unoptimized={isUploadedImage(card.imageUrl)}
                   alt=""
                   width={64}
                   height={48}

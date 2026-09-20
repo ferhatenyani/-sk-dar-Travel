@@ -48,3 +48,6 @@ next-env.d.ts
 test-results/
 playwright-report/
 playwright/.auth/
+
+# images téléversées (stockage serveur local)
+/public/uploads

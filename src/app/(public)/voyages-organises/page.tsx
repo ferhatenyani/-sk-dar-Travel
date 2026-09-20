@@ -15,7 +15,7 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: "Voyages organisés",
   description:
-    "Nos voyages organisés au départ de Sétif : départs programmés en groupe, programme jour par jour, vols, hôtels et transferts pris en charge. Devis gratuit sous 24 h.",
+    "Nos voyages organisés au départ de Sétif : départs programmés, programme jour par jour, vols, hôtels et transferts pris en charge. Devis gratuit sous 24 h.",
   alternates: { canonical: "/voyages-organises" },
 };
 
@@ -28,7 +28,7 @@ export default async function VoyagesOrganisesPage() {
         <div className="mx-auto max-w-2xl text-center">
           <Eyebrow className="justify-center">Voyages organisés</Eyebrow>
           <h1 className="mx-auto mt-3 max-w-2xl text-4xl font-bold tracking-tight text-night text-balance sm:text-5xl">
-            Nos départs programmés, pensés pour les groupes
+            Nos voyages organisés du moment
           </h1>
           <p className="mt-3 text-base leading-relaxed text-night-muted">
             Dates, programme, prix : tout est calé à l&apos;avance — il n&apos;y

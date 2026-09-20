@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import {
   useEffect,
   useRef,
@@ -179,6 +180,7 @@ export function HeroCarousel({
         >
           <Image
             src={s.imageUrl}
+            unoptimized={isUploadedImage(s.imageUrl)}
             alt={
               i === 0
                 ? "Paysage de destination proposé par Üsküdar Travel"

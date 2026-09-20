@@ -45,10 +45,20 @@ test("accueil : hero, destinations, services, aucun lien WhatsApp/email", async 
 }) => {
   await page.goto("/");
 
-  // Titre du hero piloté par le CMS
+  // Titre du hero piloté par le CMS — le carrousel rotate vite : on accepte
+  // aussi un titre de destination déjà en rotation.
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Üsküdar Travel",
+    /Üsküdar Travel|Partez en /,
   );
+
+  // Premier chargement : aucun saut automatique vers le formulaire (le focus
+  // a11y du wizard ne doit faire défiler ni au montage ni à la reconnexion
+  // d'effets React).
+  await expect
+    .poll(() => page.evaluate(() => Math.round(window.scrollY)), {
+      timeout: 5_000,
+    })
+    .toBeLessThan(100);
 
   // Barre de navigation flottante : lien actif en pilule cobalt
   const header = page.locator("header");
@@ -255,7 +265,7 @@ test("voyages organisés : accueil → modale détail → wizard pré-rempli", a
   await page.goto("/");
   const voyagesSection = page
     .locator("section")
-    .filter({ hasText: "Nos prochains départs en groupe" });
+    .filter({ hasText: "Nos prochains départs" });
   const card = voyagesSection.getByRole("link", {
     name: /Cappadoce & Istanbul — 8 jours/,
   });
@@ -299,6 +309,8 @@ test("voyages organisés : accueil → modale détail → wizard pré-rempli", a
   await expect(listingCard).toBeVisible();
   await listingCard.click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  // Laisse les effets de la modale monter (écouteur Échap) avant la touche.
+  await page.waitForTimeout(300);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });

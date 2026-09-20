@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, Check, Users, X } from "lucide-react";
 
@@ -73,6 +74,7 @@ export function VoyageModal({
               {cover ? (
                 <Image
                   src={cover}
+                  unoptimized={isUploadedImage(cover)}
                   alt={voyage.title}
                   fill
                   priority
@@ -112,7 +114,14 @@ export function VoyageModal({
                         : "opacity-75 hover:opacity-100",
                     )}
                   >
-                    <Image src={url} alt="" fill sizes="80px" className="object-cover" />
+                    <Image
+                      src={url}
+                      alt=""
+                      fill
+                      sizes="80px"
+                      unoptimized={isUploadedImage(url)}
+                      className="object-cover"
+                    />
                   </button>
                 ))}
               </div>

@@ -1,6 +1,7 @@
 // Page détail d'une offre (service du CMS) : présentation + formulaire
 // « Composer mon voyage » pré-rempli avec l'offre concernée.
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -104,6 +105,7 @@ export default async function ServiceDetailPage({
                 {service.imageUrl ? (
                   <Image
                     src={service.imageUrl}
+                    unoptimized={isUploadedImage(service.imageUrl)}
                     alt={service.title}
                     fill
                     priority
@@ -113,6 +115,7 @@ export default async function ServiceDetailPage({
                 ) : (
                   <Image
                     src={destinationImage("turquie")}
+                    unoptimized={isUploadedImage(destinationImage("turquie"))}
                     alt=""
                     fill
                     priority
@@ -196,6 +199,7 @@ export default async function ServiceDetailPage({
                       {sibling.imageUrl ? (
                         <Image
                           src={sibling.imageUrl}
+                          unoptimized={isUploadedImage(sibling.imageUrl)}
                           alt=""
                           fill
                           sizes="56px"

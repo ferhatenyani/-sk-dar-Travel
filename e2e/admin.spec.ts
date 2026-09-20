@@ -75,8 +75,46 @@ test("voyages organisés : création, édition puis suppression", async ({ page 
   await page.goto("/admin/voyages/nouveau");
   await page.getByLabel("Titre").fill("E2E Voyage");
   await page.getByLabel("Description").fill("Voyage créé par le test E2E.");
-  await page.getByLabel("Date de départ", { exact: true }).fill("2027-03-01");
-  await page.getByLabel("Date de retour", { exact: true }).fill("2027-03-08");
+
+  // Couverture : upload réel (UploadThing) — l'aperçu doit réellement se
+  // charger (naturalWidth > 0), pas seulement être visible (régression 504
+  // de l'optimiseur next/image sur les hôtes ufs.sh).
+  const PNG_1PX = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  await page
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles({ name: "e2e-couverture.png", mimeType: "image/png", buffer: PNG_1PX });
+  const coverPreview = page.getByRole("img", { name: "Aperçu de l'image téléversée" });
+  await expect(coverPreview).toBeVisible({ timeout: 45_000 });
+  await expect
+    .poll(() => coverPreview.evaluate((el) => (el as HTMLImageElement).naturalWidth), {
+      timeout: 30_000,
+    })
+    .toBeGreaterThan(0);
+
+  // Dates : sélecteurs maison (jj/mm/aaaa) — navigation vers mars 2027
+  // (boucle : insensible à la date d'exécution du test)
+  await page.getByLabel("Date de départ", { exact: true }).click();
+  const departCal = page.getByRole("dialog", { name: "Date de départ — choisir une date" });
+  const departDay = departCal.getByRole("button", { name: /^lundi 1 mars 2027$/ });
+  for (let i = 0; (await departDay.count()) === 0 && i < 240; i += 1) {
+    await departCal.getByRole("button", { name: "Mois suivant" }).click();
+  }
+  await departDay.click();
+
+  await page.getByLabel("Date de retour", { exact: true }).click();
+  const retourCal = page.getByRole("dialog", { name: "Date de retour — choisir une date" });
+  const retourDay = retourCal.getByRole("button", { name: /^lundi 8 mars 2027$/ });
+  for (let i = 0; (await retourDay.count()) === 0 && i < 240; i += 1) {
+    await retourCal.getByRole("button", { name: "Mois suivant" }).click();
+  }
+  await retourDay.click();
+  // Affichage jour/mois/année sur le déclencheur
+  await expect(page.getByLabel("Date de retour", { exact: true })).toContainText("08/03/2027");
+
   await page.getByLabel("Prix affiché").fill("Test 99 000 DA");
   await page.getByLabel("Programme (jour par jour)").fill("J1 – Départ de Sétif\nJ2 – Excursion");
   await page.getByLabel("Inclus", { exact: true }).fill("Vols A/R\nHôtel 4*");

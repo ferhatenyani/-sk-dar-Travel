@@ -3,6 +3,9 @@
  * Garantit une baseline déterministe même après un run interrompu.
  * Appelé par le script pnpm test:e2e.
  */
+import { readdir, unlink } from "node:fs/promises";
+import path from "node:path";
+
 import "../src/db/env";
 import { eq, like } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
@@ -66,6 +69,38 @@ async function main() {
         .set({ password: await hashPassword(password) })
         .where(eq(account.userId, admin.id));
     }
+  }
+
+  // Fichiers téléversés orphelins (public/uploads) : on garde ceux encore
+  // référencés par une ligne en base, on supprime le reste (uploads de test
+  // et fichiers abandonnés par un run interrompu).
+  try {
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    const files = await readdir(uploadsDir);
+    const rows = await Promise.all([
+      db.select({ url: services.imageUrl }).from(services),
+      db.select({ url: voyages.imageUrl }).from(voyages),
+      db.select({ url: galleryCards.imageUrl }).from(galleryCards),
+      db.select({ url: siteSettings.heroImageUrl }).from(siteSettings),
+      db.select({ url: siteSettings.logoUrl }).from(siteSettings),
+    ]);
+    const referenced = new Set(
+      rows
+        .flat()
+        .map((r) => r.url)
+        .filter((u): u is string => Boolean(u))
+        // URLs stockées sous /api/uploads/<clé> → clé = nom de fichier.
+        .map((u) => u.replace(/^\/api\/uploads\//, "").replace(/^\/uploads\//, "")),
+    );
+    let removed = 0;
+    for (const file of files) {
+      if (referenced.has(file)) continue;
+      await unlink(path.join(uploadsDir, file));
+      removed += 1;
+    }
+    if (removed > 0) console.log(`${removed} fichier(s) orphelin(s) supprimé(s) de public/uploads`);
+  } catch {
+    // public/uploads absent : rien à nettoyer.
   }
 
   console.log("baseline E2E prête");

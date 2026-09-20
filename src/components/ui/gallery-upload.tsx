@@ -5,14 +5,15 @@ import { useRef, useState } from "react";
 import imageCompression from "browser-image-compression";
 
 import { cn } from "@/lib/cn";
-import { useUploadThing } from "@/lib/uploadthing";
+import { isUploadedImage } from "@/lib/images";
+import { uploadImage } from "@/lib/upload-image";
 import { IconImage, IconX } from "@/components/ui/icons";
 
 /**
  * Upload multi-images (galerie d'un voyage organisé) : même pipeline que
- * `ImageUpload` — compression WebP côté client puis envoi UploadThing, un
- * fichier à la fois. Se lie à un <input type="hidden"> (une URL par ligne)
- * lu par une Server Action via FormData.
+ * `ImageUpload` — compression WebP côté client puis envoi vers
+ * `/api/uploads`, un fichier à la fois. Se lie à un <input type="hidden">
+ * (une URL par ligne) lu par une Server Action via FormData.
  */
 export function GalleryUpload({
   name,
@@ -32,8 +33,7 @@ export function GalleryUpload({
   const [processing, setProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { startUpload, isUploading } = useUploadThing("imageUploader");
-  const busy = processing || isUploading;
+  const busy = processing;
   const atMax = urls.length >= max;
 
   async function onPickFiles(files: FileList) {
@@ -50,17 +50,13 @@ export function GalleryUpload({
           useWebWorker: true,
           fileType: "image/webp",
         });
-        const res = await startUpload([compressed]);
-        const uploaded = res?.[0];
-        const url = uploaded?.ufsUrl ?? uploaded?.serverData?.url ?? "";
-        if (!url) {
-          setError("Upload terminé mais aucune URL reçue.");
-          break;
-        }
+        // Contenu WebP → nom .webp (extension d'origine sinon trompeuse).
+        const webpName = `${file.name.replace(/\.[^.]+$/, "")}.webp`;
+        const url = await uploadImage(new File([compressed], webpName, { type: "image/webp" }));
         setUrls((prev) => (prev.length >= max ? prev : [...prev, url]));
       }
-    } catch {
-      setError("Impossible de traiter ces images.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible de traiter ces images.");
     }
     setProcessing(false);
   }
@@ -84,6 +80,7 @@ export function GalleryUpload({
               alt={`Photo ${index + 1} de la galerie`}
               width={160}
               height={120}
+              unoptimized={isUploadedImage(url)}
               className="h-[120px] w-[160px] rounded-lg border border-line object-cover"
             />
             <button

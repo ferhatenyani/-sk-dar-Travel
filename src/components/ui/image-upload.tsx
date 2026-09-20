@@ -5,13 +5,14 @@ import { useRef, useState } from "react";
 import imageCompression from "browser-image-compression";
 
 import { cn } from "@/lib/cn";
-import { useUploadThing } from "@/lib/uploadthing";
+import { isUploadedImage } from "@/lib/images";
+import { uploadImage } from "@/lib/upload-image";
 import { IconImage, IconX } from "@/components/ui/icons";
 
 /**
  * Upload d'image : compression WebP côté client (économie de stockage) puis
- * envoi vers UploadThing. Se lie à un <input type="hidden"> pour être lu par
- * une Server Action via FormData.
+ * envoi vers le serveur de l'application (`/api/uploads`). Se lie à un
+ * <input type="hidden"> pour être lu par une Server Action via FormData.
  */
 export function ImageUpload({
   name,
@@ -29,30 +30,7 @@ export function ImageUpload({
   const [compressing, setCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { startUpload, isUploading } = useUploadThing("imageUploader", {
-    onClientUploadComplete: (res) => {
-      const uploaded = res[0];
-      // ufsUrl vient du client d'upload ; serverData.url est fourni par
-      // notre onUploadComplete serveur. L'un des deux suffit.
-      const uploadedUrl = uploaded?.ufsUrl ?? uploaded?.serverData?.url ?? "";
-      if (uploadedUrl) {
-        setUrl(uploadedUrl);
-      } else {
-        setError("Upload terminé mais aucune URL reçue.");
-      }
-      setCompressing(false);
-    },
-    onUploadError: (err) => {
-      setError(
-        err.message.includes("Non autorisé")
-          ? "Session expirée — reconnectez-vous."
-          : "Échec de l'upload. Réessayez.",
-      );
-      setCompressing(false);
-    },
-  });
-
-  const busy = compressing || isUploading;
+  const busy = compressing;
 
   async function onPickFile(file: File) {
     setError(null);
@@ -64,9 +42,13 @@ export function ImageUpload({
         useWebWorker: true,
         fileType: "image/webp",
       });
-      await startUpload([compressed]);
-    } catch {
-      setError("Impossible de traiter cette image.");
+      // Le contenu est désormais du WebP : le nom suit (sinon le fichier
+      // garde l'extension d'origine, trompeuse).
+      const webpName = `${file.name.replace(/\.[^.]+$/, "")}.webp`;
+      const url = await uploadImage(new File([compressed], webpName, { type: "image/webp" }));
+      setUrl(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible de traiter cette image.");
       setCompressing(false);
     }
   }
@@ -84,6 +66,7 @@ export function ImageUpload({
             alt="Aperçu de l'image téléversée"
             width={160}
             height={120}
+            unoptimized={isUploadedImage(url)}
             className="h-[120px] w-[160px] rounded-lg border border-line object-cover"
           />
           <button

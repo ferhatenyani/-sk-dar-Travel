@@ -1,5 +1,6 @@
 // Galerie — sections thématiques empilées, cartes en arche (inspi1).
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import { Images } from "lucide-react";
 
 import { CtaBand } from "@/components/vitrine/cta-band";
@@ -87,6 +88,7 @@ export default async function GaleriePage() {
                         >
                           <Image
                             src={card.imageUrl}
+                            unoptimized={isUploadedImage(card.imageUrl)}
                             alt={card.alt || card.title}
                             fill
                             sizes="(max-width: 1024px) 250px, 22vw"

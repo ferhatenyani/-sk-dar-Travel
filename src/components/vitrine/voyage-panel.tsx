@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, ArrowUpRight, CalendarDays } from "lucide-react";
@@ -22,6 +23,7 @@ function VoyageCover({ voyage, sizes }: { voyage: VoyagePublic; sizes: string })
       {voyage.imageUrl ? (
         <Image
           src={voyage.imageUrl}
+          unoptimized={isUploadedImage(voyage.imageUrl)}
           alt=""
           fill
           sizes={sizes}

@@ -1,6 +1,7 @@
 // Page détail d'une destination (section galerie publiée) : photos + texte
 // + formulaire « Composer mon voyage » avec la destination pré-cochée.
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -73,6 +74,7 @@ export default async function DestinationDetailPage({
           <div className="relative mt-4 h-[300px] overflow-hidden rounded-[28px] bg-ice shadow-[0_28px_56px_-28px_rgba(15,23,42,0.45)] sm:h-[380px] lg:h-[440px]">
             <Image
               src={heroImage}
+              unoptimized={isUploadedImage(heroImage)}
               alt={`Destination ${section.title}`}
               fill
               priority
@@ -119,6 +121,7 @@ export default async function DestinationDetailPage({
                     <span className="relative block aspect-[4/3] overflow-hidden">
                       <Image
                         src={card.imageUrl}
+                        unoptimized={isUploadedImage(card.imageUrl)}
                         alt={card.alt || card.title}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

@@ -348,14 +348,16 @@ export function TripRequestForm({
   }, [errors, step]);
 
   // Changement d'étape : le titre de l'étape prend le focus (lecteurs
-  // d'écran) — jamais au montage (aucun vol de focus au chargement).
-  const mountedRef = useRef(false);
+  // d'écran) — jamais au montage. On compare au step précédent plutôt qu'à
+  // un garde « montage » : React peut ré-exécuter les effets d'un arbre
+  // reconnecté (reconnectPassiveEffects) sans remonter le composant, et
+  // focus() sans preventScroll ferait alors sauter la page jusqu'au
+  // formulaire au chargement.
+  const prevStepRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
-    headingRef.current?.focus();
+    if (prevStepRef.current === step) return;
+    prevStepRef.current = step;
+    headingRef.current?.focus({ preventScroll: true });
   }, [step]);
 
   const clearError = (key: keyof FieldErrors) =>

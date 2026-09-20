@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/images";
 import { BedDouble, CarFront, Plane, ShieldCheck, Sparkles, Users } from "lucide-react";
 
 import { cn } from "@/lib/cn";
@@ -39,6 +40,7 @@ export function ServiceCard({ service }: { service: ServiceCardData }) {
         {service.imageUrl ? (
           <Image
             src={service.imageUrl}
+            unoptimized={isUploadedImage(service.imageUrl)}
             alt=""
             fill
             sizes="(max-width: 640px) 40vw, 33vw"
