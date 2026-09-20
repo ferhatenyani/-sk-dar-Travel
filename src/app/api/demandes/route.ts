@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { db } from "@/db";
-import { gallerySections, services, tripRequests } from "@/db/schema";
+import { gallerySections, services, tripRequests, voyages } from "@/db/schema";
 import { clientIpFrom, rateLimit } from "@/lib/rate-limit";
 import {
   ACCOMMODATION_VALUES,
@@ -43,6 +43,8 @@ const demandSchema = z
       .max(5, "Cinq offres maximum.")
       .optional()
       .default([]),
+    // Voyage organisé choisi : slug unique, optionnel.
+    voyage: z.string().trim().max(80).optional().default(""),
     departureCity: z
       .string()
       .trim()
@@ -150,6 +152,22 @@ export async function POST(request: Request) {
     offerTitles = offers.map((slug) => titleBySlug.get(slug)!);
   }
 
+  // Voyage organisé : seul un slug publié est accepté, titre snapshoté pour
+  // survivre à une suppression du voyage.
+  let voyageSlug: string | null = null;
+  let voyageTitle: string | null = null;
+  if (data.voyage) {
+    const [row] = await db
+      .select({ slug: voyages.slug, title: voyages.title })
+      .from(voyages)
+      .where(and(eq(voyages.published, true), eq(voyages.slug, data.voyage)))
+      .limit(1);
+    if (row) {
+      voyageSlug = row.slug;
+      voyageTitle = row.title;
+    }
+  }
+
   await db.insert(tripRequests).values({
     fullName: data.fullName,
     phone: data.phone,
@@ -157,6 +175,8 @@ export async function POST(request: Request) {
     destinations,
     offers,
     offerTitles,
+    voyageSlug,
+    voyageTitle,
     departureCity: data.departureCity,
     departureDate: data.departureDate,
     returnDate: data.returnDate ? data.returnDate : null,

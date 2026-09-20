@@ -14,6 +14,7 @@ import {
   services,
   siteSettings,
   user,
+  voyages,
 } from "./schema";
 
 const TEXTE_OFFICIEL =
@@ -207,12 +208,96 @@ async function seedDemoServices() {
   console.log("✓ Services de démonstration prêts");
 }
 
+async function seedDemoVoyages() {
+  const demo = [
+    {
+      title: "Cappadoce & Istanbul — 8 jours",
+      slug: "cappadoce-istanbul-8-jours",
+      description:
+        "Départ en groupe de Sétif : Istanbul historique, vol en montgolfière au-dessus des vallées de Cappadoce et détente à Pamukkale.",
+      price: "À partir de 189 000 DA",
+      imageUrl: IMG.cappadoce,
+      galleryImages: [IMG.istanbul, IMG.pamukkale, IMG.hero],
+      departureDate: "2026-12-12",
+      returnDate: "2026-12-19",
+      program:
+        "J1 – Sétif → Istanbul : vol, transfert et installation à l'hôtel\n" +
+        "J2 – Istanbul : Sainte-Sophie, Blue Mosque et Grand Bazar\n" +
+        "J3 – Istanbul : Bosphore et quartiers de Beyoğlu\n" +
+        "J4 – Route vers la Cappadoce et première vallée\n" +
+        "J5 – Cappadoce : vol en montgolfière au lever du soleil\n" +
+        "J6 – Pamukkale : terrasses de travertin et Hierapolis\n" +
+        "J7 – Retour à Istanbul, shopping et temps libre\n" +
+        "J8 – Retour à Sétif",
+      included: [
+        "Vols A/R au départ de Sétif",
+        "Hôtels 4* avec petit-déjeuner",
+        "Transferts et guide francophone",
+        "Vol en montgolfière",
+      ],
+      excluded: ["Visa électronique", "Dépenses personnelles", "Déjeuners et dîners"],
+      sortOrder: 1,
+    },
+    {
+      title: "Le Caire & la Mer Rouge — 7 jours",
+      slug: "caire-mer-rouge-7-jours",
+      description:
+        "Pyramides de Gizeh, musée égyptien puis farniente sur les plages de Hurghada : le meilleur de l'Égypte en un seul séjour.",
+      price: "À partir de 159 000 DA",
+      imageUrl: IMG.pyramides,
+      galleryImages: [IMG.louxor, IMG.nil],
+      departureDate: "2027-02-20",
+      returnDate: "2027-02-26",
+      program:
+        "J1 – Sétif → Le Caire : vol et installation à l'hôtel\n" +
+        "J2 – Pyramides de Gizeh et Sphinx\n" +
+        "J3 – Musée égyptien et Khan el-Khalili\n" +
+        "J4 – Route vers Hurghada, après-midi plage\n" +
+        "J5 – Mer Rouge : snorkeling et bateau\n" +
+        "J6 – Journée libre en bord de mer\n" +
+        "J7 – Retour à Sétif",
+      included: [
+        "Vols A/R au départ de Sétif",
+        "Hôtels 4* en demi-pension",
+        "Transferts climatisés et guide francophone",
+        "Excursion bateau à Hurghada",
+      ],
+      excluded: ["Visa d'entrée", "Dépenses personnelles", "Pourboires"],
+      sortOrder: 2,
+    },
+  ];
+
+  for (const v of demo) {
+    await db
+      .insert(voyages)
+      .values({ ...v, published: true })
+      .onConflictDoUpdate({
+        target: voyages.slug,
+        set: {
+          title: v.title,
+          description: v.description,
+          price: v.price,
+          imageUrl: v.imageUrl,
+          galleryImages: v.galleryImages,
+          departureDate: v.departureDate,
+          returnDate: v.returnDate,
+          program: v.program,
+          included: v.included,
+          excluded: v.excluded,
+          sortOrder: v.sortOrder,
+        },
+      });
+  }
+  console.log("✓ Voyages organisés de démonstration prêts");
+}
+
 async function main() {
   console.log("— Seed Üsküdar Travel —");
   await seedSettings();
   await seedAdmin();
   await seedGallery();
   await seedDemoServices();
+  await seedDemoVoyages();
   console.log("— Terminé —");
 }
 

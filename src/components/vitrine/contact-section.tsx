@@ -22,10 +22,12 @@ export function ContactSection({
   settings,
   destinations,
   offers,
+  voyages,
 }: {
   settings: VitrineSettings;
   destinations: Choice[];
   offers: Choice[];
+  voyages: Choice[];
 }) {
   return (
     <section id="contact" className="scroll-mt-24 py-14 sm:py-20">
@@ -40,7 +42,7 @@ export function ContactSection({
         {/* Le formulaire, pièce centrale (desktop) / carte CTA (mobile) */}
         <div className="mx-auto mt-8 max-w-3xl sm:mt-10">
           <div className="hidden sm:block">
-            <TripRequestForm destinations={destinations} offers={offers} />
+            <TripRequestForm destinations={destinations} offers={offers} voyages={voyages} />
           </div>
           <ComposerCard />
         </div>

@@ -14,6 +14,7 @@ import {
   getPublishedDestinations,
   getPublishedGallery,
   getPublishedOffers,
+  getPublishedVoyageChoices,
 } from "@/lib/public-data";
 import { destinationImage } from "@/lib/vitrine";
 
@@ -43,10 +44,11 @@ export default async function DestinationDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [gallery, destinations, offers] = await Promise.all([
+  const [gallery, destinations, offers, voyageChoices] = await Promise.all([
     getPublishedGallery(),
     getPublishedDestinations(),
     getPublishedOffers(),
+    getPublishedVoyageChoices(),
   ]);
 
   const section = gallery.find((s) => s.slug === slug);
@@ -162,6 +164,7 @@ export default async function DestinationDetailPage({
                 <TripRequestForm
                   destinations={destinations}
                   offers={offers}
+                  voyages={voyageChoices}
                   defaultDestinations={[section.slug]}
                   idPrefix="vt-destination"
                 />

@@ -56,6 +56,10 @@ export default async function DemandeDetailPage({
         ? demande.offerTitles.join(", ")
         : "Aucune en particulier",
     },
+    {
+      label: "Voyage organisé",
+      value: demande.voyageTitle ?? "Aucun",
+    },
     { label: "Ville de départ", value: demande.departureCity },
     { label: "Départ", value: formatDate(demande.departureDate) },
     { label: "Retour", value: demande.returnDate ? formatDate(demande.returnDate) : "—" },

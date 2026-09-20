@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -37,6 +38,11 @@ import {
 import { cn } from "@/lib/cn";
 import { Dropdown } from "@/components/ui/dropdown";
 import {
+  onComposerPrefill,
+  takeComposerPrefill,
+} from "@/lib/composer-prefill";
+import type { ComposerPrefill } from "./composer";
+import {
   ACCOMMODATIONS,
   BUDGET_RANGES,
   labelOf,
@@ -54,6 +60,7 @@ type FieldErrors = Partial<
     | "email"
     | "destinations"
     | "offers"
+    | "voyage"
     | "departureCity"
     | "departureDate"
     | "returnDate"
@@ -95,6 +102,7 @@ const FIELD_STEP: Record<string, number> = {
   email: 0,
   destinations: 1,
   offers: 1,
+  voyage: 1,
   departureCity: 1,
   departureDate: 1,
   returnDate: 1,
@@ -236,8 +244,10 @@ function IconCard({
 export function TripRequestForm({
   destinations,
   offers,
+  voyages = [],
   defaultDestinations = [],
   defaultOffers = [],
+  defaultVoyage = "",
   idPrefix = "vt-form",
   onClose,
 }: {
@@ -245,9 +255,13 @@ export function TripRequestForm({
   destinations: Choice[];
   /** Offres publiées (services). */
   offers: Choice[];
+  /** Voyages organisés publiés (menu « Voyage organisé »). */
+  voyages?: Choice[];
   /** Sélections pré-remplies (arrivée depuis une page détail / le hero). */
   defaultDestinations?: string[];
   defaultOffers?: string[];
+  /** Voyage organisé pré-sélectionné (slug). */
+  defaultVoyage?: string;
   /** Préfixe des id : deux formulaires peuvent coexister (page + feuille). */
   idPrefix?: string;
   /** Fermeture de la feuille (affiche la croix). */
@@ -264,6 +278,7 @@ export function TripRequestForm({
   const [email, setEmail] = useState("");
   const [selectedDestinations, setSelectedDestinations] = useState<string[]>(defaultDestinations);
   const [selectedOffers, setSelectedOffers] = useState<string[]>(defaultOffers);
+  const [voyage, setVoyage] = useState(defaultVoyage);
   const [departureCity, setDepartureCity] = useState("");
   const [range, setRange] = useState<DateRange | null>(null);
   const [adults, setAdults] = useState(2);
@@ -276,12 +291,28 @@ export function TripRequestForm({
   // Référence « boarding pass » (générée côté client après montage : aucune
   // discordance d'hydratation, le placeholder s'affiche au premier paint).
   const [reference, setReference] = useState("······");
+
+  /** Application d'un pré-remplissage (destinations, offres, voyage). */
+  const applyPrefill = useCallback((prefill: ComposerPrefill) => {
+    if (prefill.destinations?.length) setSelectedDestinations(prefill.destinations);
+    if (prefill.offers?.length) setSelectedOffers(prefill.offers);
+    if (prefill.voyage !== undefined) setVoyage(prefill.voyage);
+  }, []);
+
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       setReference(`VT-${Date.now().toString(36).slice(-6).toUpperCase()}`);
+      // Pré-remplissage posé avant une navigation vers cette page (modale
+      // voyage → accueil #contact…) : consommé une seule fois, après montage.
+      const pending = takeComposerPrefill();
+      if (pending) applyPrefill(pending);
     });
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [applyPrefill]);
+
+  // Pré-remplissage posé alors que le formulaire est déjà monté (desktop :
+  // bouton du hero, carte destination du carrousel, modale voyage…).
+  useEffect(() => onComposerPrefill(applyPrefill), [applyPrefill]);
 
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -298,6 +329,7 @@ export function TripRequestForm({
       email: `#${id("email")}`,
       destinations: `#${id("destinations")}-label`,
       offers: `#${id("offers")}-label`,
+      voyage: `#${id("voyage")}-label`,
       departureCity: `#${id("departureCity")}`,
       departureDate: `#${id("dates")}-label`,
       returnDate: `#${id("dates")}-label`,
@@ -411,6 +443,7 @@ export function TripRequestForm({
           email,
           destinations: selectedDestinations,
           offers: selectedOffers,
+          voyage,
           departureCity,
           departureDate: range?.from ?? "",
           returnDate: range?.to ?? "",
@@ -464,6 +497,7 @@ export function TripRequestForm({
     setEmail("");
     setSelectedDestinations(defaultDestinations);
     setSelectedOffers(defaultOffers);
+    setVoyage(defaultVoyage);
     setDepartureCity("");
     setRange(null);
     setAdults(2);
@@ -747,6 +781,32 @@ export function TripRequestForm({
                     </div>
                     <FieldError message={errors.destinations} />
                   </div>
+
+                  {/* Départs organisés : sélection unique, optionnelle */}
+                  {voyages.length > 0 ? (
+                    <div>
+                      <span id={`${id("voyage")}-label`} className={labelCls}>
+                        Voyage organisé{optionalHint}
+                      </span>
+                      <p className="mt-0.5 text-xs text-night-muted">
+                        Un départ en groupe déjà programmé ? Sélectionnez-le,
+                        sinon laissez vide.
+                      </p>
+                      <Dropdown
+                        id={id("voyage")}
+                        ariaLabel="Voyage organisé"
+                        tone="vitrine"
+                        placeholder="Aucun voyage organisé"
+                        value={voyage}
+                        onChange={setVoyage}
+                        options={[
+                          { value: "", label: "Aucun voyage organisé" },
+                          ...voyages.map((v) => ({ value: v.slug, label: v.title })),
+                        ]}
+                        className="mt-2.5"
+                      />
+                    </div>
+                  ) : null}
 
                   {offers.length > 0 ? (
                     <div>
@@ -1033,6 +1093,17 @@ export function TripRequestForm({
                                     .filter((o) => selectedOffers.includes(o.slug))
                                     .map((o) => o.title)
                                     .join(" · "),
+                                  wide: true,
+                                },
+                              ]
+                            : []),
+                          ...(voyage
+                            ? [
+                                {
+                                  k: "Voyage organisé",
+                                  v:
+                                    voyages.find((v) => v.slug === voyage)?.title ??
+                                    voyage,
                                   wide: true,
                                 },
                               ]

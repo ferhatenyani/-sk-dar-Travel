@@ -81,6 +81,35 @@ export const services = pgTable("services", {
     .$onUpdate(() => new Date()),
 });
 
+/* ——— CMS : voyages organisés (départs programmés) ——— */
+
+export const voyages = pgTable("voyages", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description").notNull().default(""),
+  /** Prix affiché tel quel (ex. « À partir de 89 000 DA ») — optionnel. */
+  price: text("price"),
+  /** Image de couverture (WebP, upload UploadThing). */
+  imageUrl: text("image_url").notNull().default(""),
+  /** Photos de galerie (0 à 6, URLs WebP). */
+  galleryImages: text("gallery_images").array().notNull().default(sql`'{}'::text[]`),
+  /** Dates ISO (AAAA-MM-JJ) — tri naturel, optionnelles. */
+  departureDate: date("departure_date"),
+  returnDate: date("return_date"),
+  /** Programme jour par jour : une ligne par jour (« J1 – Istanbul : … »). */
+  program: text("program").notNull().default(""),
+  included: text("included").array().notNull().default(sql`'{}'::text[]`),
+  excluded: text("excluded").array().notNull().default(sql`'{}'::text[]`),
+  sortOrder: integer("sort_order").notNull().default(0),
+  published: boolean("published").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
 /* ——— CMS : galerie (sections N-N cartes globales) ——— */
 
 export const gallerySections = pgTable("gallery_sections", {
@@ -159,6 +188,9 @@ export const tripRequests = pgTable("trip_requests", {
   /** Offres concernées : slugs + titres figés (survivent à une suppression d'offre). */
   offers: text("offers").array().notNull().default(sql`'{}'::text[]`),
   offerTitles: text("offer_titles").array().notNull().default(sql`'{}'::text[]`),
+  /** Voyage organisé choisi : slug + titre figés (survivent à une suppression). */
+  voyageSlug: text("voyage_slug"),
+  voyageTitle: text("voyage_title"),
   departureCity: text("departure_city").notNull(),
   /** Dates ISO (AAAA-MM-JJ) : tri naturel, aucun fuseau à gérer. */
   departureDate: date("departure_date").notNull(),
@@ -203,6 +235,7 @@ export const siteSettings = pgTable("site_settings", {
 /* ——— Types ——— */
 
 export type Service = typeof services.$inferSelect;
+export type Voyage = typeof voyages.$inferSelect;
 export type GallerySection = typeof gallerySections.$inferSelect;
 export type GalleryCard = typeof galleryCards.$inferSelect;
 export type SectionCard = typeof sectionCards.$inferSelect;

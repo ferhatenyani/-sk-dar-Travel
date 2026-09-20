@@ -21,6 +21,7 @@ import { Reveal } from "@/components/vitrine/reveal";
 import {
   getPublishedDestinations,
   getPublishedOffers,
+  getPublishedVoyageChoices,
 } from "@/lib/public-data";
 import { destinationImage } from "@/lib/vitrine";
 
@@ -68,9 +69,10 @@ export default async function ServiceDetailPage({
   const service = await getService(slug);
   if (!service) notFound();
 
-  const [destinations, offers, siblings] = await Promise.all([
+  const [destinations, offers, voyageChoices, siblings] = await Promise.all([
     getPublishedDestinations(),
     getPublishedOffers(),
+    getPublishedVoyageChoices(),
     db
       .select({ slug: services.slug, title: services.title, imageUrl: services.imageUrl })
       .from(services)
@@ -163,6 +165,7 @@ export default async function ServiceDetailPage({
               <TripRequestForm
                 destinations={destinations}
                 offers={offers}
+                voyages={voyageChoices}
                 defaultOffers={[service.slug]}
                 idPrefix="vt-service"
               />

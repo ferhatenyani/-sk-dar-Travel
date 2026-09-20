@@ -15,6 +15,13 @@
       "when": 1789421745237,
       "tag": "0001_dear_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789905095155,
+      "tag": "0002_serious_mad_thinker",
+      "breakpoints": true
     }
   ]
 }

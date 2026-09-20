@@ -178,3 +178,14 @@ export function IconCheck(props: SVGProps<SVGSVGElement>) {
     </Icon>
   );
 }
+
+export function IconRoute(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <circle cx="6" cy="19" r="2.4" />
+      <circle cx="18" cy="5" r="2.4" />
+      <path d="M9.5 18.5h7a4 4 0 0 0 0-8h-7" />
+      <path d="M14.5 5.5h-7" />
+    </Icon>
+  );
+}

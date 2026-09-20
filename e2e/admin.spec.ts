@@ -33,7 +33,7 @@ test("tableau de bord : modules accessibles", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Administration", exact: true }),
   ).toBeVisible();
-  for (const label of ["Demandes", "Services", "Galerie", "Contenus", "Compte"]) {
+  for (const label of ["Demandes", "Services", "Voyages organisés", "Galerie", "Contenus", "Compte"]) {
     await expect(
       page.getByRole("link", { name: label, exact: true }),
     ).toBeVisible();
@@ -62,6 +62,41 @@ test("services : création, édition puis suppression", async ({ page }) => {
   await page.goto("/admin/services");
   const rowToDrop = page.locator("main ul li").filter({ hasText: "E2E Service" });
   await rowToDrop.getByRole("button", { name: "Supprimer E2E Service" }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Supprimer", exact: true })
+    .click();
+  await expect(rowToDrop).toHaveCount(0);
+});
+
+/* ——— Voyages organisés ——— */
+
+test("voyages organisés : création, édition puis suppression", async ({ page }) => {
+  await page.goto("/admin/voyages/nouveau");
+  await page.getByLabel("Titre").fill("E2E Voyage");
+  await page.getByLabel("Description").fill("Voyage créé par le test E2E.");
+  await page.getByLabel("Date de départ", { exact: true }).fill("2027-03-01");
+  await page.getByLabel("Date de retour", { exact: true }).fill("2027-03-08");
+  await page.getByLabel("Prix affiché").fill("Test 99 000 DA");
+  await page.getByLabel("Programme (jour par jour)").fill("J1 – Départ de Sétif\nJ2 – Excursion");
+  await page.getByLabel("Inclus", { exact: true }).fill("Vols A/R\nHôtel 4*");
+  await page.getByLabel("Non inclus").fill("Visa");
+  await page.getByRole("button", { name: "Créer le voyage" }).click();
+  await page.waitForURL("**/admin/voyages");
+
+  const row = page.locator("main ul li").filter({ hasText: "E2E Voyage" });
+  await expect(row).toBeVisible();
+  await expect(row).toContainText("Du 1 au 8 mars 2027");
+
+  await row.getByRole("link", { name: "Modifier E2E Voyage" }).click();
+  await page.waitForURL(/\/admin\/voyages\/\d+$/);
+  await page.getByLabel("Prix affiché").fill("Test 111 000 DA");
+  await page.getByRole("button", { name: /Enregistrer/ }).click();
+  await expect(page.getByText("Voyage mis à jour.")).toBeVisible();
+
+  await page.goto("/admin/voyages");
+  const rowToDrop = page.locator("main ul li").filter({ hasText: "E2E Voyage" });
+  await rowToDrop.getByRole("button", { name: "Supprimer E2E Voyage" }).click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Supprimer", exact: true })
@@ -206,7 +241,8 @@ test("demandes : liste, détail, statut puis suppression", async ({
   request,
 }) => {
   // Crée une demande de référence via l'API publique (suite autonome),
-  // avec une offre concernée (multi-offres : tableau de slugs).
+  // avec une offre concernée (multi-offres : tableau de slugs) et un
+  // voyage organisé pré-sélectionné (seed).
   const created = await request.post("/api/demandes", {
     data: {
       fullName: DEMANDE_NAME,
@@ -214,6 +250,7 @@ test("demandes : liste, détail, statut puis suppression", async ({
       email: "vitrine@e2e.dz",
       destinations: ["turquie"],
       offers: ["voyages-organises"],
+      voyage: "cappadoce-istanbul-8-jours",
       departureCity: "Sétif",
       departureDate: futureDate(42),
       adults: 3,
@@ -235,10 +272,13 @@ test("demandes : liste, détail, statut puis suppression", async ({
   await expect(row).toContainText("1 offre");
 
   // Détail : toutes les données du formulaire, dont le titre de l'offre
+  // et le voyage organisé choisi (snapshot du titre)
   await row.getByRole("link").first().click();
   await page.waitForURL(/\/admin\/demandes\/\d+$/);
   await expect(page.getByText("0555999888")).toBeVisible();
-  await expect(page.getByText("Voyages organisés")).toBeVisible();
+  // « main » : le lien de menu « Voyages organisés » de la sidebar sinon masque ce texte
+  await expect(page.getByRole("main").getByText("Voyages organisés")).toBeVisible();
+  await expect(page.getByText("Cappadoce & Istanbul — 8 jours")).toBeVisible();
   await expect(page.getByText("Séjour en famille")).toBeVisible();
   await expect(page.getByText("100 000 à 200 000 DA")).toBeVisible();
 
@@ -309,6 +349,12 @@ test("API demandes : validation, honeypot et enregistrement", async ({
     data: { ...payload, fullName: "E2E API Offre Inconnue", offers: ["atlantide"] },
   });
   expect(unknownOffer.status()).toBe(200);
+
+  // Voyage organisé inconnu → ignoré silencieusement (le reste est enregistré)
+  const unknownVoyage = await request.post("/api/demandes", {
+    data: { ...payload, fullName: "E2E API Voyage Inconnu", voyage: "atlantide" },
+  });
+  expect(unknownVoyage.status()).toBe(200);
 });
 
 /* ——— Admin responsive (mobile) ——— */

@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Compass } from "lucide-react";
 
 import { cn } from "@/lib/cn";
+import { emitComposerPrefill } from "@/lib/composer-prefill";
 import { TripRequestForm } from "./trip-request-form";
 
 type Choice = { slug: string; title: string };
@@ -22,6 +23,8 @@ type Choice = { slug: string; title: string };
 export type ComposerPrefill = {
   destinations?: string[];
   offers?: string[];
+  /** Voyage organisé pré-sélectionné (slug). */
+  voyage?: string;
 };
 
 type ComposerContextValue = {
@@ -143,10 +146,13 @@ const SWIPE_CLOSE_THRESHOLD = 90;
 export function ComposerProvider({
   destinations,
   offers,
+  voyages,
   children,
 }: {
   destinations: Choice[];
   offers: Choice[];
+  /** Voyages organisés publiés (menu « Voyage organisé » du wizard). */
+  voyages: Choice[];
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -175,6 +181,9 @@ export function ComposerProvider({
 
   const open = useCallback(
     (prefill: ComposerPrefill = {}) => {
+      // Pose le pré-remplissage pour les formulaires déjà montés (événement)
+      // et pour le formulaire de la page de destination (sessionStorage).
+      emitComposerPrefill(prefill);
       if (!window.matchMedia(SHEET_MQ).matches) {
         // Desktop : le formulaire est dans la page — on y emmène l'utilisateur.
         const form = document.querySelector("[data-vt-composer]");
@@ -317,8 +326,10 @@ export function ComposerProvider({
                   key={state.nonce}
                   destinations={destinations}
                   offers={offers}
+                  voyages={voyages}
                   defaultDestinations={state.prefill.destinations}
                   defaultOffers={state.prefill.offers}
+                  defaultVoyage={state.prefill.voyage}
                   idPrefix="vt-modal"
                   onClose={close}
                 />

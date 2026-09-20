@@ -42,6 +42,8 @@ const PUBLIC_PAGES = [
   "/",
   "/services",
   "/services/voyages-organises",
+  "/voyages-organises",
+  "/voyages-organises?voyage=cappadoce-istanbul-8-jours",
   "/destinations/turquie",
   "/galerie",
   "/a-propos",

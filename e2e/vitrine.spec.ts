@@ -248,6 +248,85 @@ test("devis : validation par étape puis demande enregistrée", async ({ page })
   await expect(page.getByText("Demande envoyée !")).toBeVisible();
 });
 
+test("voyages organisés : accueil → modale détail → wizard pré-rempli", async ({
+  page,
+}) => {
+  // Section accueil : les voyages seedés sont dans le carrousel
+  await page.goto("/");
+  const voyagesSection = page
+    .locator("section")
+    .filter({ hasText: "Nos prochains départs en groupe" });
+  const card = voyagesSection.getByRole("link", {
+    name: /Cappadoce & Istanbul — 8 jours/,
+  });
+  await expect(card).toBeVisible();
+
+  // Clic sur la carte → page listing ouverte sur la modale du voyage cliqué
+  await card.click();
+  await expect(page).toHaveURL(/\/voyages-organises\?voyage=cappadoce-istanbul-8-jours$/);
+  const modal = page.getByRole("dialog", {
+    name: "Voyage organisé : Cappadoce & Istanbul — 8 jours",
+  });
+  await expect(modal).toBeVisible();
+  await expect(modal.getByText("À partir de 189 000 DA")).toBeVisible();
+  await expect(modal.getByText("Programme", { exact: true })).toBeVisible();
+  await expect(modal.getByText(/J5 – Cappadoce/)).toBeVisible();
+  await expect(modal.getByText("Inclus", { exact: true })).toBeVisible();
+
+  // « Sélectionner ce voyage » → wizard pré-rempli (desktop : accueil #contact)
+  await modal.getByRole("button", { name: "Sélectionner ce voyage" }).click();
+  await expect(modal).toHaveCount(0);
+  await expect(page.locator("#vt-form-fullName")).toBeInViewport({ timeout: 20_000 });
+  await page.locator("#vt-form-fullName").fill("E2E Vitrine Voyage");
+  await page.locator("#vt-form-phone").fill("0555000011");
+  await page.locator("#vt-form-email").fill("voyage@e2e.dz");
+  await page.getByRole("button", { name: "Suivant", exact: true }).click();
+  // Le menu « Voyage organisé » (étape 2) affiche le voyage sélectionné
+  await expect(page.locator("#vt-form-voyage")).toContainText(
+    "Cappadoce & Istanbul — 8 jours",
+  );
+
+  // « Voir plus » : listing complet sans modale, puis ouverture par carte.
+  // (Pas de décompte exact : la page est en ISR et peut refléter
+  // transientement d'autres lignes du CMS.)
+  await page.goto("/");
+  await page.getByRole("link", { name: "Voir tous les voyages" }).click();
+  await expect(page).toHaveURL(/\/voyages-organises$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const listingCard = page.locator(
+    'a[href="/voyages-organises?voyage=cappadoce-istanbul-8-jours"]',
+  );
+  await expect(listingCard).toBeVisible();
+  await listingCard.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("mobile : voyages organisés — modale puis feuille pré-remplie", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/voyages-organises?voyage=caire-mer-rouge-7-jours");
+  const modal = page.getByRole("dialog", {
+    name: "Voyage organisé : Le Caire & la Mer Rouge — 7 jours",
+  });
+  await expect(modal).toBeVisible();
+
+  await modal.getByRole("button", { name: "Sélectionner ce voyage" }).click();
+  const sheet = page.getByRole("dialog", { name: "Composer mon voyage" });
+  await expect(sheet).toBeVisible();
+  await sheet.locator("#vt-modal-fullName").fill("E2E Mobile Voyage");
+  await sheet.locator("#vt-modal-phone").fill("0555000011");
+  await sheet.locator("#vt-modal-email").fill("mobile@e2e.dz");
+  await sheet.getByRole("button", { name: "Suivant", exact: true }).click();
+  await expect(sheet.locator("#vt-modal-voyage")).toContainText(
+    "Le Caire & la Mer Rouge — 7 jours",
+  );
+  await sheet.getByRole("button", { name: "Fermer", exact: true }).click();
+  await expect(sheet).toHaveCount(0);
+});
+
 test("mobile : menu, panneau composer et galerie sans débordement", async ({
   page,
 }) => {
@@ -288,5 +367,6 @@ test("SEO : titres, description, canonical, robots et sitemap", async ({
   const sitemap = await (await page.request.get("/sitemap.xml")).text();
   expect(sitemap).toContain("/services/voyages-organises");
   expect(sitemap).toContain("/destinations/turquie");
+  expect(sitemap).toContain("/voyages-organises");
   expect((await page.request.get("/robots.txt")).status()).toBe(200);
 });

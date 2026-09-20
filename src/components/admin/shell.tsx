@@ -16,6 +16,7 @@ import {
   IconInbox,
   IconLogOut,
   IconMenu,
+  IconRoute,
   IconUser,
   IconX,
 } from "@/components/ui/icons";
@@ -24,6 +25,7 @@ const NAV = [
   { href: "/admin", label: "Accueil", icon: IconHome, exact: true },
   { href: "/admin/demandes", label: "Demandes", icon: IconInbox },
   { href: "/admin/services", label: "Services", icon: IconBriefcase },
+  { href: "/admin/voyages", label: "Voyages organisés", icon: IconRoute },
   { href: "/admin/galerie", label: "Galerie", icon: IconImage },
   { href: "/admin/contenus", label: "Contenus", icon: IconFileText },
   { href: "/admin/compte", label: "Compte", icon: IconUser },

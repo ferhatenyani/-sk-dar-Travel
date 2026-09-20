@@ -27,9 +27,11 @@ import {
 } from "@/components/vitrine/primitives";
 import { Reveal } from "@/components/vitrine/reveal";
 import { ServiceCard, type ServiceCardData } from "@/components/vitrine/service-card";
+import { VoyageStrip } from "@/components/vitrine/voyage-panel";
 import {
   getPublishedGallery,
   getPublishedOffers,
+  getPublishedVoyages,
   getSettings,
 } from "@/lib/public-data";
 import { destinationImage, siteUrl, vitrineSettings } from "@/lib/vitrine";
@@ -66,10 +68,11 @@ export async function generateMetadata() {
 }
 
 export default async function HomePage() {
-  const [rawSettings, gallery, offers] = await Promise.all([
+  const [rawSettings, gallery, offers, voyages] = await Promise.all([
     getSettings(),
     getPublishedGallery(),
     getPublishedOffers(),
+    getPublishedVoyages(),
   ]);
   const settings = vitrineSettings(rawSettings);
 
@@ -149,6 +152,31 @@ export default async function HomePage() {
           <DestinationStrip destinations={destinations} />
         </Reveal>
       </section>
+
+      {/* ——— Voyages organisés : carrousel des départs programmés ——— */}
+      {/* Masquée tant qu'aucun voyage n'est publié (layout propre, vide ne
+          doit rien montrer). Une carte ouvre la modale de détail sur la page
+          listing via le paramètre ?voyage=slug. */}
+      {voyages.length > 0 ? (
+        <section className="mx-auto w-full max-w-6xl px-4 pt-9 sm:px-6 sm:pt-12 lg:px-10">
+          <Reveal>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <SectionHeading
+                eyebrow="Voyages organisés"
+                title="Nos prochains départs en groupe"
+                sub="Programme calé, prix ferme, équipement de rêve : choisissez votre date, on s'occupe du reste."
+              />
+              <ButtonLink href="/voyages-organises" variant="ghost">
+                Voir tous les voyages
+                <ArrowRight className="h-4 w-4" />
+              </ButtonLink>
+            </div>
+          </Reveal>
+          <Reveal delay={100} className="mt-7 sm:mt-9">
+            <VoyageStrip voyages={voyages} />
+          </Reveal>
+        </section>
+      ) : null}
 
       {/* ——— Services ——— */}
       <section className="py-10 sm:py-16 lg:py-20">
@@ -240,6 +268,7 @@ export default async function HomePage() {
         settings={settings}
         destinations={destinations}
         offers={offers}
+        voyages={voyages}
       />
     </>
   );

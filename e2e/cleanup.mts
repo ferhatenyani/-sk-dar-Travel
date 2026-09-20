@@ -16,6 +16,7 @@ import {
   siteSettings,
   tripRequests,
   user,
+  voyages,
 } from "../src/db/schema";
 
 const TEXTE =
@@ -29,6 +30,7 @@ async function main() {
   await db.delete(galleryCards).where(like(galleryCards.title, "E2E%"));
   await db.delete(gallerySections).where(like(gallerySections.slug, "e2e-%"));
   await db.delete(services).where(like(services.slug, "e2e-service%"));
+  await db.delete(voyages).where(like(voyages.slug, "e2e-voyage%"));
   // Demandes de voyage de test (formulaire public + API)
   await db.delete(tripRequests).where(like(tripRequests.fullName, "E2E%"));
 
