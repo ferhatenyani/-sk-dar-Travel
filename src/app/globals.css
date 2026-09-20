@@ -1,19 +1,42 @@
 @import "tailwindcss";
 
-/* Aucun style navigateur par défaut sur les contrôles (flèches de select,
- * arrondis iOS, déco search…), scopé à la vitrine (l'admin garde ses styles). */
-.vt-root button,
-.vt-root input,
-.vt-root select,
-.vt-root textarea {
+/*
+ * Zéro style navigateur sur les contrôles (arrondis iOS, spinners,
+ * déco search…) — global, vitrine ET admin. Plus aucun <select> ni
+ * input[type=date] dans l'app : dropdowns et calendrier sont 100 % maison.
+ */
+button,
+input,
+select,
+textarea {
   appearance: none;
   -webkit-appearance: none;
 }
-.vt-root input[type="search"]::-webkit-search-decoration,
-.vt-root input[type="search"]::-webkit-search-cancel-button,
-.vt-root input[type="search"]::-webkit-search-results-button,
-.vt-root input[type="search"]::-webkit-search-results-decoration {
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
   -webkit-appearance: none;
+}
+/* Spinners natifs des number : masqués (l'admin a ses propres composants,
+ * et le style natif varie selon les navigateurs). */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* 16 px minimum sur les contrôles : iOS zoome au focus en dessous. */
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
 }
 
 /*
@@ -67,8 +90,6 @@
   --color-night-soft: #334155;
   --color-night-muted: #64748b;
   --color-night-faint: #94a3b8;
-  --color-whatsapp: #25d366;
-  --color-whatsapp-hover: #1eb85a;
 
   --radius-default: 0.5rem;
 }
@@ -246,4 +267,72 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-line-strong) transparent;
+}
+
+/*
+ * Barres de défilement maison (WebKit) : pouce arrondi discret, piste
+ * transparente — aucune barre grise par défaut, vitrine comme admin.
+ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ice-strong);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-night-faint);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/*
+ * Feuille « Composer mon voyage » (mobile uniquement — sur desktop le
+ * bouton fait défiler la page vers le formulaire intégré).
+ */
+@keyframes vt-sheet-in-bottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+.vt-sheet {
+  animation: vt-sheet-in-bottom 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vt-sheet {
+    animation: none;
+  }
+}
+
+/*
+ * Wizard « boarding pass » : micro-transition d'entrée à chaque changement
+ * d'étape (répond à l'action, pas une décoration de défilement).
+ */
+@keyframes vt-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.vt-ticket-step {
+  animation: vt-step-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vt-ticket-step {
+    animation: none;
+  }
 }

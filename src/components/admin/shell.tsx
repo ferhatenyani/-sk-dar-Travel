@@ -13,6 +13,7 @@ import {
   IconFileText,
   IconHome,
   IconImage,
+  IconInbox,
   IconLogOut,
   IconMenu,
   IconUser,
@@ -21,6 +22,7 @@ import {
 
 const NAV = [
   { href: "/admin", label: "Accueil", icon: IconHome, exact: true },
+  { href: "/admin/demandes", label: "Demandes", icon: IconInbox },
   { href: "/admin/services", label: "Services", icon: IconBriefcase },
   { href: "/admin/galerie", label: "Galerie", icon: IconImage },
   { href: "/admin/contenus", label: "Contenus", icon: IconFileText },

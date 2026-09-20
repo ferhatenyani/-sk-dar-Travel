@@ -1,6 +1,7 @@
-// Services — grille des services publiés du CMS.
+// Services — grille des services publiés du CMS, chaque carte mène à sa
+// page détail avec formulaire de demande de devis.
 import { asc, eq } from "drizzle-orm";
-import { CalendarCheck, MessagesSquare, PlaneTakeoff } from "lucide-react";
+import { CalendarCheck, ClipboardList, PlaneTakeoff } from "lucide-react";
 
 import { db } from "@/db";
 import { services as servicesTable } from "@/db/schema";
@@ -12,8 +13,6 @@ import {
 } from "@/components/vitrine/primitives";
 import { Reveal } from "@/components/vitrine/reveal";
 import { ServiceCard } from "@/components/vitrine/service-card";
-import { getSettings } from "@/lib/public-data";
-import { vitrineSettings, waServiceLink } from "@/lib/vitrine";
 
 export const revalidate = 60;
 
@@ -26,9 +25,9 @@ export const metadata = {
 
 const STEPS = [
   {
-    icon: MessagesSquare,
-    title: "1. On discute",
-    text: "Un message sur WhatsApp ou via le formulaire : destination, dates, voyageurs, budget. C'est déjà presque parti.",
+    icon: ClipboardList,
+    title: "1. Vous décrivez",
+    text: "Quelques minutes sur le formulaire : destination, dates, voyageurs, budget. C'est déjà presque parti.",
   },
   {
     icon: CalendarCheck,
@@ -43,8 +42,6 @@ const STEPS = [
 ];
 
 export default async function ServicesPage() {
-  const settings = vitrineSettings(await getSettings());
-
   const rows = await db
     .select()
     .from(servicesTable)
@@ -75,8 +72,8 @@ export default async function ServicesPage() {
         <Container>
           {rows.length === 0 ? (
             <p className="rounded-3xl border border-dashed border-ice-strong bg-white p-8 text-center text-sm text-night-muted">
-              Nos services arrivent très bientôt — contactez-nous directement
-              sur WhatsApp pour préparer votre voyage.
+              Nos services arrivent très bientôt — utilisez le formulaire de la
+              page d’accueil pour préparer votre voyage.
             </p>
           ) : (
             <div className="grid gap-5 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
@@ -90,7 +87,6 @@ export default async function ServicesPage() {
                       price: service.price,
                       imageUrl: service.imageUrl,
                     }}
-                    waHref={waServiceLink(settings.whatsappNumber, service.title)}
                   />
                 </Reveal>
               ))}
@@ -134,7 +130,6 @@ export default async function ServicesPage() {
       </section>
 
       <CtaBand
-        settings={settings}
         title="Votre prochaine destination n'attend que vous"
         sub="Organisé ou sur-mesure, près ou loin : parlons-en maintenant — concevoir votre voyage ne coûte rien, partir en vaut la peine."
       />

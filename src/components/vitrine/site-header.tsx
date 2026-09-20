@@ -3,12 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
-import { ArrowUpRight, Mail, Menu, Phone, X } from "lucide-react";
-
+import { useEffect, useState } from "react";
+import { ArrowUpRight, Compass, Menu, Phone, X } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { telHref, waLink, WA_MESSAGE, type VitrineSettings } from "@/lib/vitrine";
-import { WhatsAppIcon } from "./primitives";
+import { telHref, type VitrineSettings } from "@/lib/vitrine";
+import { useComposer } from "./composer";
 
 const NAV_ITEMS = [
   { href: "/", label: "Accueil" },
@@ -31,8 +30,7 @@ function linkCls(active: boolean, compact = false): string {
   );
 }
 
-/** Pastille circulaire commune aux boutons « Planifier » / « Contact ». */
-function buttonCircle(onDark: boolean, children: ReactNode) {
+function buttonCircle(onDark: boolean, children: React.ReactNode) {
   return (
     <span
       className={cn(
@@ -47,73 +45,32 @@ function buttonCircle(onDark: boolean, children: ReactNode) {
   );
 }
 
-/** Bouton « Planifier » : pastille blanche + icône WhatsApp verte. */
-export function PlanButton({
-  settings,
-  onDark = false,
-  textClassName = "",
-}: {
-  settings: VitrineSettings;
-  /** Variante posée sur la photo du hero (verre blanc, texte blanc). */
-  onDark?: boolean;
-  /** Classes additionnelles pour le texte (ex. responsive). */
-  textClassName?: string;
-}) {
+/**
+ * Bouton « Composer mon voyage » de la barre : ouvre le panneau de demande
+ * de devis (même gabarit pastille + cercle que les CTA du hero).
+ */
+function ComposerButton({ textClassName = "" }: { textClassName?: string }) {
+  const { open } = useComposer();
   return (
-    <a
-      href={waLink(settings.whatsappNumber, WA_MESSAGE)}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Planifier mon voyage sur WhatsApp"
+    <button
+      type="button"
+      onClick={() => open()}
+      aria-label="Composer mon voyage — demande de devis"
       className={cn(
         "group flex items-center gap-2.5 rounded-full p-1 transition-colors sm:pr-4",
-        onDark ? "hover:bg-white/10" : "hover:bg-ice/60",
+        "hover:bg-ice/60",
       )}
     >
-      {buttonCircle(
-        onDark,
-        <WhatsAppIcon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />,
-      )}
+      {buttonCircle(false, <Compass className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />)}
       <span
         className={cn(
-          "hidden text-sm font-semibold whitespace-nowrap md:block",
-          onDark ? "text-white" : "text-night",
+          "hidden text-sm font-semibold whitespace-nowrap text-night md:block",
           textClassName,
         )}
       >
-        Planifier mon voyage
+        Composer mon voyage
       </span>
-    </a>
-  );
-}
-
-/**
- * Bouton « Contact » du hero : ancre vers la section contact en bas de
- * page (défilement doux via scroll-behavior sur html).
- */
-export function ContactButton({ onDark = false }: { onDark?: boolean }) {
-  return (
-    <a
-      href="#contact"
-      aria-label="Aller à la section contact"
-      className={cn(
-        "group flex items-center gap-2.5 rounded-full p-1 transition-colors sm:pr-4",
-        onDark ? "hover:bg-white/10" : "hover:bg-ice/60",
-      )}
-    >
-      {buttonCircle(
-        onDark,
-        <Mail className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />,
-      )}
-      <span
-        className={cn(
-          "text-sm font-semibold whitespace-nowrap",
-          onDark ? "text-white" : "text-night",
-        )}
-      >
-        Demander un devis
-      </span>
-    </a>
+    </button>
   );
 }
 
@@ -187,7 +144,8 @@ function MenuButton({
 
 /**
  * Menu plein écran (mobile/tablet) : prise de contrôle totale, grands liens
- * numérotés animés en cascade, CTA WhatsApp et coordonnées en pied de menu.
+ * numérotés animés en cascade, CTA « Composer mon voyage » et téléphone en
+ * pied de menu.
  */
 function MobileMenu({
   settings,
@@ -201,6 +159,7 @@ function MobileMenu({
   id: string;
 }) {
   const pathname = usePathname();
+  const { open: openComposer } = useComposer();
   if (!open) return null;
   return (
     <div
@@ -211,7 +170,7 @@ function MobileMenu({
       className="fixed inset-0 z-[70] flex flex-col bg-white lg:hidden"
     >
       {/* En-tête du menu : même rangée que la barre (logo à gauche, croix à droite) */}
-      <div className="flex items-center justify-between border-b border-ice/70 px-4 py-2.5 sm:px-6">
+      <div className="flex items-center justify-between border-b border-ice/70 px-4 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-2.5 sm:px-6">
         <Logo settings={settings} />
         <MenuButton open onToggle={onClose} id={id} />
       </div>
@@ -251,18 +210,22 @@ function MobileMenu({
         </ul>
       </nav>
 
-      <div className="vt-menu-item border-t border-ice/70 px-6 py-5 sm:px-10" style={{ animationDelay: "380ms" }}>
+      <div
+        className="vt-menu-item border-t border-ice/70 px-6 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:px-10"
+        style={{ animationDelay: "380ms" }}
+      >
         <div className="mx-auto max-w-md sm:max-w-lg">
-          <a
-            href={waLink(settings.whatsappNumber, WA_MESSAGE)}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={onClose}
-            className="flex items-center justify-center gap-2.5 rounded-full bg-citrine px-6 py-3.5 text-[15px] font-bold text-night shadow-[0_14px_32px_-14px_rgba(250,204,21,0.8)] transition-all hover:bg-citrine-hover active:scale-[0.98]"
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              openComposer();
+            }}
+            className="flex w-full items-center justify-center gap-2.5 rounded-full bg-citrine px-6 py-3.5 text-[15px] font-bold text-night shadow-[0_14px_32px_-14px_rgba(250,204,21,0.8)] transition-all hover:bg-citrine-hover active:scale-[0.98]"
           >
-            <WhatsAppIcon className="h-5 w-5 text-whatsapp" />
-            Planifier mon voyage
-          </a>
+            <Compass className="h-5 w-5" />
+            Composer mon voyage
+          </button>
           <div className="mt-4 flex items-center justify-center gap-5 text-sm text-night-muted">
             <a
               href={telHref(settings.phone)}
@@ -270,13 +233,6 @@ function MobileMenu({
             >
               <Phone className="h-3.5 w-3.5" />
               {settings.phone}
-            </a>
-            <a
-              href={`mailto:${settings.email}`}
-              className="flex items-center gap-1.5 transition-colors hover:text-cobalt"
-            >
-              <Mail className="h-3.5 w-3.5" />
-              E-mail
             </a>
           </div>
         </div>
@@ -286,8 +242,8 @@ function MobileMenu({
 }
 
 /**
- * Contenu de la barre : logo à gauche ; liens inline + bouton WhatsApp à
- * droite sur desktop ; bouton WhatsApp (icône seule) + « ☰ Menu » à droite
+ * Contenu de la barre : logo à gauche ; liens inline + bouton « Composer »
+ * à droite sur desktop ; bouton Composer (icône seule) + « ☰ Menu » à droite
  * sur mobile/tablet.
  */
 function NavContent({
@@ -325,7 +281,7 @@ function NavContent({
       </nav>
 
       <div className="flex items-center gap-1 sm:gap-1.5">
-        <PlanButton settings={settings} />
+        <ComposerButton />
         <div className="lg:hidden">
           <MenuButton open={menuOpen} onToggle={onToggleMenu} id="vt-mobile-menu" />
         </div>
@@ -338,6 +294,7 @@ function NavContent({
  * Chrome de navigation global (style inspi3) : une barre blanche au-dessus
  * du contenu sur toutes les pages (le hero vit sous la barre), remplacée
  * après défilement par une barre fixe pleine largeur en verre dépoli.
+ * Les deux barres respèctent l'encoche iOS (safe-area-inset-top).
  */
 export default function SiteHeader({ settings }: { settings: VitrineSettings }) {
   const [glassVisible, setGlassVisible] = useState(false);
@@ -366,7 +323,7 @@ export default function SiteHeader({ settings }: { settings: VitrineSettings }) 
       {/* Barre statique pleine largeur, au-dessus du contenu (toutes pages),
           sans filet : la barre et le hero ne font qu'un visuellement */}
       <header data-nav-sentinel className="bg-white">
-        <div className="mx-auto w-full max-w-6xl px-4 pt-2.5 pb-1 sm:px-6 lg:px-10">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-1 sm:px-6 lg:px-10">
           <NavContent
             settings={settings}
             menuOpen={menuOpen}
@@ -377,7 +334,7 @@ export default function SiteHeader({ settings }: { settings: VitrineSettings }) 
 
       {/* Barre fixe pleine largeur, verre dépoli (après défilement) */}
       {glassVisible ? (
-        <div className="fixed inset-x-0 top-0 z-50 border-b border-ice/70 bg-white/80 backdrop-blur-lg">
+        <div className="fixed inset-x-0 top-0 z-50 border-b border-ice/70 bg-white/80 pt-[env(safe-area-inset-top)] backdrop-blur-lg">
           <div className="mx-auto flex w-full max-w-6xl items-center px-4 py-2 sm:px-6 lg:px-10">
             <NavContent
               settings={settings}

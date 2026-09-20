@@ -1,0 +1,172 @@
+import { and, eq, inArray } from "drizzle-orm";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+
+import { db } from "@/db";
+import { gallerySections, services, tripRequests } from "@/db/schema";
+import { clientIpFrom, rateLimit } from "@/lib/rate-limit";
+import {
+  ACCOMMODATION_VALUES,
+  BUDGET_VALUES,
+  OTHER_DESTINATION,
+  TRIP_TYPE_VALUES,
+} from "@/lib/trip-options";
+
+/** Date du jour (AAAA-MM-JJ, fuseau serveur) pour les bornes de dates. */
+function todayIso(): string {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 10);
+}
+
+const demandSchema = z
+  .object({
+    fullName: z
+      .string()
+      .trim()
+      .min(2, "Le nom complet est requis.")
+      .max(100, "Le nom est trop long."),
+    phone: z
+      .string()
+      .trim()
+      .min(6, "Le numéro de téléphone est requis.")
+      .max(30, "Le numéro est trop long.")
+      .regex(/^[+0-9 ()./-]+$/, "Le téléphone ne peut contenir que des chiffres et + ( ) - ."),
+    email: z.string().trim().max(200).email("Adresse e-mail invalide."),
+    destinations: z
+      .array(z.string().trim().min(1).max(60))
+      .min(1, "Choisissez au moins une destination.")
+      .max(10, "Dix destinations maximum."),
+    // Offres concernées : 0 à 5 slugs (multi-sélection du formulaire).
+    offers: z
+      .array(z.string().trim().min(1).max(80))
+      .max(5, "Cinq offres maximum.")
+      .optional()
+      .default([]),
+    departureCity: z
+      .string()
+      .trim()
+      .min(2, "La ville de départ est requise.")
+      .max(100, "La ville est trop longue."),
+    departureDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date de départ invalide.")
+      .refine((v) => v >= todayIso(), "La date de départ doit être future."),
+    returnDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date de retour invalide.")
+      .optional()
+      .or(z.literal("")),
+    adults: z.coerce
+      .number()
+      .int("Doit être un entier.")
+      .min(1, "Au moins un adulte.")
+      .max(30, "Trop de voyageurs — appelez-nous pour un grand groupe."),
+    children: z.coerce.number().int("Doit être un entier.").min(0).max(30).default(0),
+    tripType: z.enum(TRIP_TYPE_VALUES as [string, ...string[]], {
+      message: "Choisissez un type de voyage.",
+    }),
+    budget: z.enum(BUDGET_VALUES as [string, ...string[]], {
+      message: "Choisissez une fourchette de budget.",
+    }),
+    accommodation: z.enum(ACCOMMODATION_VALUES as [string, ...string[]], {
+      message: "Choisissez un hébergement.",
+    }),
+    notes: z
+      .string()
+      .trim()
+      .max(2000, "Les demandes spéciales sont trop longues (2000 caractères max).")
+      .optional()
+      .default(""),
+    // Honeypot anti-spam : doit rester vide (champ caché du formulaire).
+    website: z.string().optional().default(""),
+  })
+  .refine(
+    (d) => !d.returnDate || d.returnDate > d.departureDate,
+    { path: ["returnDate"], message: "Le retour doit être après le départ." },
+  );
+
+export async function POST(request: Request) {
+  const ip = clientIpFrom(request.headers);
+  if (!rateLimit(`demandes:${ip}`, 10, 5 * 60_000)) {
+    return NextResponse.json(
+      { error: "Trop de demandes. Réessayez dans quelques minutes." },
+      { status: 429 },
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
+  }
+
+  const parsed = demandSchema.safeParse(body);
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const key = String(issue.path[0] ?? "form");
+      if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+    }
+    return NextResponse.json({ error: "Données invalides.", fieldErrors }, { status: 400 });
+  }
+
+  const data = parsed.data;
+
+  // Honeypot rempli → bot : faux succès, rien n'est enregistré.
+  if (data.website) {
+    return NextResponse.json({ ok: true });
+  }
+
+  // Destinations : on ne garde que les slugs réellement publiés (ou « autre »),
+  // pour que la demande corresponde toujours à des choix affichables en admin.
+  const publishedSlugs = await db
+    .select({ slug: gallerySections.slug })
+    .from(gallerySections)
+    .where(eq(gallerySections.published, true));
+  const allowed = new Set(publishedSlugs.map((s) => s.slug));
+  allowed.add(OTHER_DESTINATION);
+  const destinations = data.destinations.filter((slug) => allowed.has(slug));
+  if (destinations.length === 0) {
+    return NextResponse.json(
+      { error: "Données invalides.", fieldErrors: { destinations: "Choisissez au moins une destination valide." } },
+      { status: 400 },
+    );
+  }
+
+  // Offres : seuls les slugs réellement publiés sont gardés (formulaire
+  // trafiqué), titres snapshotés pour survivre à une suppression d'offre.
+  let offers: string[] = [];
+  let offerTitles: string[] = [];
+  if (data.offers.length > 0) {
+    const rows = await db
+      .select({ slug: services.slug, title: services.title })
+      .from(services)
+      .where(and(eq(services.published, true), inArray(services.slug, data.offers)));
+    const titleBySlug = new Map(rows.map((r) => [r.slug, r.title]));
+    // Ordre du formulaire conservé, dédoublonné.
+    offers = [...new Set(data.offers)].filter((slug) => titleBySlug.has(slug));
+    offerTitles = offers.map((slug) => titleBySlug.get(slug)!);
+  }
+
+  await db.insert(tripRequests).values({
+    fullName: data.fullName,
+    phone: data.phone,
+    email: data.email,
+    destinations,
+    offers,
+    offerTitles,
+    departureCity: data.departureCity,
+    departureDate: data.departureDate,
+    returnDate: data.returnDate ? data.returnDate : null,
+    adults: data.adults,
+    children: data.children,
+    tripType: data.tripType,
+    budget: data.budget,
+    accommodation: data.accommodation,
+    notes: data.notes || null,
+  });
+
+  return NextResponse.json({ ok: true });
+}

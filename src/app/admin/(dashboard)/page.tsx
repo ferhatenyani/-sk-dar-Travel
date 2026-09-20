@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { eq, sql } from "drizzle-orm";
 
+import { db } from "@/db";
+import { tripRequests } from "@/db/schema";
 import {
   IconBriefcase,
   IconChevronDown,
   IconFileText,
   IconImage,
+  IconInbox,
   IconUser,
 } from "@/components/ui/icons";
 
@@ -14,6 +18,12 @@ export const metadata: Metadata = {
 };
 
 const MODULES = [
+  {
+    href: "/admin/demandes",
+    title: "Demandes",
+    description: "Demandes de devis du formulaire « Composer mon voyage » — statuts, notes et suivi.",
+    icon: IconInbox,
+  },
   {
     href: "/admin/services",
     title: "Services",
@@ -40,7 +50,12 @@ const MODULES = [
   },
 ];
 
-export default function AdminHomePage() {
+export default async function AdminHomePage() {
+  const [nouvelles] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(tripRequests)
+    .where(eq(tripRequests.status, "nouvelle"));
+
   return (
     <div>
       <header className="mb-6">
@@ -49,6 +64,19 @@ export default function AdminHomePage() {
           Gérez le contenu du site Üsküdar Travel.
         </p>
       </header>
+
+      {nouvelles.count > 0 ? (
+        <Link
+          href="/admin/demandes?statut=nouvelle"
+          className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-navy-border bg-navy-soft px-4 py-3 text-sm font-medium text-navy transition-colors hover:bg-navy hover:text-white"
+        >
+          <span>
+            {nouvelles.count} nouvelle{nouvelles.count > 1 ? "s" : ""} demande
+            {nouvelles.count > 1 ? "s" : ""} de voyage à traiter
+          </span>
+          <IconChevronDown className="size-4 -rotate-90" />
+        </Link>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         {MODULES.map(({ href, title, description, icon: Icon }) => (

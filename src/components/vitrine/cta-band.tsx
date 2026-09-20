@@ -1,21 +1,19 @@
 import { ArrowRight } from "lucide-react";
 
-import { waLink, WA_MESSAGE, type VitrineSettings } from "@/lib/vitrine";
-import { ButtonLink, Container, Eyebrow } from "./primitives";
+import { ComposerTrigger } from "./composer";
+import { Container, Eyebrow } from "./primitives";
 import { Reveal } from "./reveal";
 
 /** Bande de conversion réutilisable en fin de page. */
 export function CtaBand({
-  settings,
   title = "Votre prochaine histoire commence ici",
   sub = "Décrivez-nous votre projet — destination, dates, budget — et nous nous occupons du reste, de A à Z.",
 }: {
-  settings: VitrineSettings;
   title?: string;
   sub?: string;
 }) {
   return (
-    <section id="contact" className="scroll-mt-24 py-14 sm:py-20">
+    <section className="py-14 sm:py-20">
       <Container>
         <Reveal>
           <div className="relative overflow-hidden rounded-[32px] bg-night px-6 py-12 text-center sm:px-12 sm:py-16">
@@ -36,18 +34,13 @@ export function CtaBand({
               <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-white/70">
                 {sub}
               </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <ButtonLink
-                  href={waLink(settings.whatsappNumber, WA_MESSAGE)}
-                  external
-                  size="lg"
-                >
-                  Discuter sur WhatsApp
+              {/* CTA unique : « Composer mon voyage » emmène déjà vers le
+                  formulaire (scroll sur la page, accueil #contact sinon). */}
+              <div className="mt-8 flex justify-center">
+                <ComposerTrigger variant="primary" size="lg">
+                  Composer mon voyage
                   <ArrowRight className="h-4 w-4" />
-                </ButtonLink>
-                <ButtonLink href="/#contact" variant="outline-light" size="lg">
-                  Utiliser le formulaire
-                </ButtonLink>
+                </ComposerTrigger>
               </div>
             </div>
           </div>

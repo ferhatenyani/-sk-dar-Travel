@@ -44,13 +44,6 @@ const settingsSchema = z.object({
     .min(1, "Le téléphone est obligatoire.")
     .max(20, "Le téléphone ne peut pas dépasser 20 caractères.")
     .regex(/^[\d\s+]+$/, "Le téléphone ne peut contenir que des chiffres, des espaces et « + »."),
-  whatsappNumber: z
-    .string()
-    .trim()
-    .min(1, "Le numéro WhatsApp est obligatoire.")
-    .max(20, "Le numéro WhatsApp ne peut pas dépasser 20 caractères.")
-    .regex(/^\+\d{1,19}$/, "Format international requis, ex. +213770505715."),
-  email: z.string().trim().min(1, "L'e-mail est obligatoire.").email("Adresse e-mail invalide."),
   address: z
     .string()
     .trim()
@@ -86,8 +79,6 @@ function parseSettingsForm(formData: FormData) {
     heroImageUrl: strOf(formData, "heroImageUrl"),
     aboutText: strOf(formData, "aboutText"),
     phone: strOf(formData, "phone"),
-    whatsappNumber: strOf(formData, "whatsappNumber"),
-    email: strOf(formData, "email"),
     address: strOf(formData, "address"),
     logoUrl: strOf(formData, "logoUrl"),
     facebookUrl: strOf(formData, "facebookUrl"),
@@ -111,7 +102,6 @@ function revalidateSitePages() {
   revalidatePath("/a-propos");
   revalidatePath("/services");
   revalidatePath("/galerie");
-  revalidatePath("/contact");
   revalidatePath("/admin/contenus");
 }
 
@@ -138,8 +128,6 @@ export async function updateSettings(formData: FormData): Promise<FormState> {
     heroImageUrl: data.heroImageUrl || null,
     aboutText: data.aboutText,
     phone: data.phone,
-    whatsappNumber: data.whatsappNumber,
-    email: data.email,
     address: data.address,
     logoUrl: data.logoUrl || null,
     facebookUrl: data.facebookUrl || null,

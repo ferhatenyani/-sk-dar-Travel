@@ -3,12 +3,20 @@ import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/vitrine/site-footer";
 import SiteHeader from "@/components/vitrine/site-header";
 import { SmoothScroll } from "@/components/vitrine/smooth-scroll";
-import { WhatsAppFab } from "@/components/vitrine/whatsapp-fab";
-import { getSettings } from "@/lib/public-data";
+import { ComposerProvider } from "@/components/vitrine/composer";
+import {
+  getPublishedDestinations,
+  getPublishedOffers,
+  getSettings,
+} from "@/lib/public-data";
 import { vitrineSettings } from "@/lib/vitrine";
 
 export default async function PublicLayout({ children }: { children: ReactNode }) {
-  const settings = vitrineSettings(await getSettings());
+  const [settings, destinations, offers] = await Promise.all([
+    getSettings(),
+    getPublishedDestinations(),
+    getPublishedOffers(),
+  ]);
 
   return (
     <div className="vt-root flex min-h-dvh flex-col bg-white text-night antialiased">
@@ -20,10 +28,11 @@ export default async function PublicLayout({ children }: { children: ReactNode }
           __html: "document.documentElement.classList.add('vt-js')",
         }}
       />
-      <SiteHeader settings={settings} />
-      <main className="flex-1">{children}</main>
-      <SiteFooter settings={settings} />
-      <WhatsAppFab settings={settings} />
+      <ComposerProvider destinations={destinations} offers={offers}>
+        <SiteHeader settings={vitrineSettings(settings)} />
+        <main className="flex-1">{children}</main>
+        <SiteFooter settings={vitrineSettings(settings)} />
+      </ComposerProvider>
     </div>
   );
 }

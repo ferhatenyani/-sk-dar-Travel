@@ -18,7 +18,7 @@ function clamp(v: number, min: number, max: number) {
 function DestinationCard({ d, className }: { d: Destination; className: string }) {
   return (
     <Link
-      href={`/galerie#${d.slug}`}
+      href={`/destinations/${d.slug}`}
       className={`group block shrink-0 snap-start ${className}`}
     >
       <span className="block aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-night/5">

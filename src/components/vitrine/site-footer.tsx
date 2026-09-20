@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { MapPin, Phone } from "lucide-react";
 
-import { telHref, type VitrineSettings, waLink, WA_MESSAGE } from "@/lib/vitrine";
-import { Container, FacebookIcon, InstagramIcon, WhatsAppIcon } from "./primitives";
+import { mapsLink, telHref, type VitrineSettings } from "@/lib/vitrine";
+import { Container, FacebookIcon, InstagramIcon } from "./primitives";
 
 const NAV = [
   { href: "/", label: "Accueil" },
@@ -61,15 +61,6 @@ export function SiteFooter({ settings }: { settings: VitrineSettings }) {
                   <InstagramIcon className="h-4 w-4" />
                 </a>
               ) : null}
-              <a
-                href={waLink(settings.whatsappNumber, WA_MESSAGE)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp Üsküdar Travel"
-                className="grid h-9 w-9 place-items-center rounded-full border border-white/20 text-white/80 transition-colors hover:border-whatsapp hover:text-whatsapp"
-              >
-                <WhatsAppIcon className="h-4 w-4" />
-              </a>
             </div>
           </div>
 
@@ -107,37 +98,24 @@ export function SiteFooter({ settings }: { settings: VitrineSettings }) {
               </li>
               <li>
                 <a
-                  href={waLink(settings.whatsappNumber, WA_MESSAGE)}
+                  href={mapsLink()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 text-white/80 transition-colors hover:text-whatsapp"
-                >
-                  <WhatsAppIcon className="h-4 w-4 shrink-0 text-white/40" />
-                  WhatsApp {settings.whatsappNumber}
-                </a>
-              </li>
-              <li>
-                <a
-                  href={`mailto:${settings.email}`}
                   className="flex items-center gap-2.5 text-white/80 transition-colors hover:text-citrine"
                 >
-                  <Mail className="h-4 w-4 shrink-0 text-white/40" />
-                  {settings.email}
+                  <MapPin className="h-4 w-4 shrink-0 text-white/40" />
+                  {settings.address}
                 </a>
-              </li>
-              <li className="flex items-center gap-2.5 text-white/80">
-                <MapPin className="h-4 w-4 shrink-0 text-white/40" />
-                {settings.address}
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-xs text-white/50 sm:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 pb-[env(safe-area-inset-bottom)] text-xs text-white/50 sm:flex-row">
           <p>© {year} Üsküdar Travel — Tous droits réservés.</p>
           <div className="flex items-center gap-4">
             <Link href="/#contact" className="transition-colors hover:text-white">
-              Nous écrire
+              Nous contacter
             </Link>
             <span aria-hidden className="h-3 w-px bg-white/20" />
             <Link href="/admin/login" className="transition-colors hover:text-white">

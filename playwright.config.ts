@@ -4,7 +4,7 @@ import { config as loadEnv } from "dotenv";
 // webServer lit aussi .env.local — les deux doivent pointer sur :3000).
 loadEnv({ path: ".env.local" });
 
-import { defineConfig, type PlaywrightTestConfig } from "@playwright/test";
+import { type PlaywrightTestConfig } from "@playwright/test";
 
 const AUTH_FILE = "playwright/.auth/admin.json";
 
@@ -48,6 +48,15 @@ const pwConfig: PlaywrightTestConfig = {
       name: "admin",
       testMatch: /admin\.spec\.ts/,
       dependencies: ["setup"],
+      use: { ...base, storageState: AUTH_FILE },
+    },
+    {
+      // Matrice responsive : pages publiques + admin sur tous les viewports.
+      // Dépend du setup (l'admin y est testé) ; tourne après la suite
+      // fonctionnelle pour ne pas perturber les données E2E.
+      name: "responsive",
+      testMatch: /responsive\.spec\.ts/,
+      dependencies: ["setup", "vitrine", "admin"],
       use: { ...base, storageState: AUTH_FILE },
     },
   ],

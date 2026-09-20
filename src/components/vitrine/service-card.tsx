@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Image from "next/image";
 import { BedDouble, CarFront, Plane, ShieldCheck, Sparkles, Users } from "lucide-react";
 
@@ -21,24 +22,17 @@ export type ServiceCardData = {
 };
 
 /**
- * Carte service — posée sur un lien WhatsApp « Demander ce service ».
- * Mobile : carte horizontale (image à gauche) ; sm+ : image au-dessus.
+ * Carte service — posée sur un lien vers la page détail du service (avec
+ * formulaire de demande). Mobile : carte horizontale (image à gauche) ;
+ * sm+ : image au-dessus.
  */
-export function ServiceCard({
-  service,
-  waHref,
-}: {
-  service: ServiceCardData;
-  waHref: string;
-}) {
+export function ServiceCard({ service }: { service: ServiceCardData }) {
   const Icon = SERVICE_ICONS[service.slug];
 
   return (
-    <a
-      href={waHref}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Demander « ${service.title} » sur WhatsApp`}
+    <Link
+      href={`/services/${service.slug}`}
+      aria-label={`Découvrir « ${service.title} » et demander un devis`}
       className="group flex h-full flex-row overflow-hidden rounded-3xl border border-ice bg-white transition-all duration-300 hover:-translate-y-1 hover:border-ice-strong hover:shadow-[0_24px_48px_-24px_rgba(15,23,42,0.25)] sm:flex-col"
     >
       <span className="relative block w-[38%] shrink-0 self-stretch overflow-hidden sm:w-full sm:h-44">
@@ -97,6 +91,6 @@ export function ServiceCard({
           </span>
         </span>
       </span>
-    </a>
+    </Link>
   );
 }

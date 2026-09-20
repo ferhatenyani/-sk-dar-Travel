@@ -9,7 +9,7 @@ const AUTH_FILE = "playwright/.auth/admin.json";
 setup("connexion administrateur (setup)", async ({ page }) => {
   await page.goto("/admin/login");
   await page.getByLabel("Email").fill(process.env.ADMIN_EMAIL ?? "");
-  await page.getByLabel("Mot de passe").fill(process.env.ADMIN_PASSWORD ?? "");
+  await page.getByLabel("Mot de passe", { exact: true }).fill(process.env.ADMIN_PASSWORD ?? "");
   await page.getByRole("button", { name: "Se connecter" }).click();
   await page.waitForURL("**/admin");
   await expect(

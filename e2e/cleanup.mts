@@ -14,6 +14,7 @@ import {
   gallerySections,
   services,
   siteSettings,
+  tripRequests,
   user,
 } from "../src/db/schema";
 
@@ -28,6 +29,8 @@ async function main() {
   await db.delete(galleryCards).where(like(galleryCards.title, "E2E%"));
   await db.delete(gallerySections).where(like(gallerySections.slug, "e2e-%"));
   await db.delete(services).where(like(services.slug, "e2e-service%"));
+  // Demandes de voyage de test (formulaire public + API)
+  await db.delete(tripRequests).where(like(tripRequests.fullName, "E2E%"));
 
   // Textes éventuellement marqués « [E2E] » par les tests
   const [settings] = await db

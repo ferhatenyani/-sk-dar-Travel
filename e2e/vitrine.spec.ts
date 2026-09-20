@@ -2,14 +2,14 @@ import { expect, test, type Page } from "@playwright/test";
 
 /**
  * Parcours VISITEUR sur la vitrine publique (sans session admin) :
- * accueil (hero pleine page sous la barre de nav), navigation, galerie,
- * formulaire de contact (envoi e-mail, sans stockage), responsive mobile
- * et bases SEO.
+ * accueil (hero + panneau « Composer mon voyage »), pages détail
+ * offre/destination, formulaire de demande de devis (stocké côté admin),
+ * responsive mobile et bases SEO.
  */
 
 test.describe.configure({ mode: "serial" });
 
-const CONTACT_NAME = "E2E Vitrine Contact";
+const DEMANDE_NAME = "E2E Vitrine Contact";
 
 /** Aucune image cassée (src inchargées avec naturalWidth = 0). */
 async function assertNoBrokenImages(page: Page) {
@@ -40,7 +40,7 @@ async function scrollThroughPage(page: Page) {
   await page.waitForLoadState("networkidle");
 }
 
-test("accueil : hero pleine page, destinations, services, WhatsApp, images", async ({
+test("accueil : hero, destinations, services, aucun lien WhatsApp/email", async ({
   page,
 }) => {
   await page.goto("/");
@@ -56,13 +56,9 @@ test("accueil : hero pleine page, destinations, services, WhatsApp, images", asy
     header.getByRole("link", { name: "Accueil", exact: true }),
   ).toHaveClass(/bg-cobalt/);
 
-  // CTA principal WhatsApp + bouton flottant
-  await expect(
-    page.getByRole("link", { name: "Discuter avec Üsküdar Travel sur WhatsApp" }),
-  ).toBeVisible();
-  await expect(
-    page.locator('a[href^="https://wa.me/213770505715"]').first(),
-  ).toBeVisible();
+  // Aucune trace WhatsApp / e-mail sur la page
+  await expect(page.locator('a[href^="https://wa.me"], a[href^="mailto:"]')).toHaveCount(0);
+  await expect(page.getByText(/WhatsApp/i)).toHaveCount(0);
 
   // Carrousel du hero : points de pagination par destination + flèches ;
   // la diapositive suivante affiche un titre « Partez en … »
@@ -75,15 +71,60 @@ test("accueil : hero pleine page, destinations, services, WhatsApp, images", asy
     page.getByRole("button", { name: /le défilement automatique/ }),
   ).toBeVisible();
 
-  // Les 6 services publiés, chacun lié à WhatsApp
-  await expect(page.locator('a[aria-label^="Demander"]')).toHaveCount(6);
+  // Les 6 services publiés, chacun lié à sa page détail
+  await expect(page.locator('a[href^="/services/"]')).toHaveCount(6);
 
   await scrollThroughPage(page);
   await assertNoBrokenImages(page);
   await assertNoHorizontalOverflow(page);
 });
 
-test("navigation : les pages publiques affichent leurs contenus", async ({
+test("composer : scroll vers le formulaire (desktop), feuille pré-cochée (mobile)", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  // Diapo destination active → la Turquie est pré-cochée dans la feuille
+  await page.getByRole("button", { name: "Aller à la destination Turquie" }).click();
+
+  // Desktop : le bouton fait défiler jusqu'au formulaire intégré (pas de panneau)
+  await page
+    .getByRole("region", { name: "Destinations à la une" })
+    .getByRole("button", { name: /Composer mon voyage/ })
+    .click();
+  await expect(page.locator("#vt-form-fullName")).toBeInViewport();
+  await expect(page.getByRole("dialog", { name: "Composer mon voyage" })).toHaveCount(0);
+
+  // Mobile : le même bouton ouvre la feuille basse, destination pré-cochée
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.getByRole("button", { name: "Aller à la destination Turquie" }).click();
+  await page
+    .getByRole("region", { name: "Destinations à la une" })
+    .getByRole("button", { name: /Composer mon voyage/ })
+    .click();
+
+  const panel = page.getByRole("dialog", { name: "Composer mon voyage" });
+  await expect(panel).toBeVisible();
+
+  // Les destinations vivent à l'étape 2 : coordonnées d'abord (validation
+  // par étape), comme dans le parcours réel.
+  await panel.locator("#vt-modal-fullName").fill("E2E Preflight");
+  await panel.locator("#vt-modal-phone").fill("0555000011");
+  await panel.locator("#vt-modal-email").fill("preflight@e2e.dz");
+  await panel.getByRole("button", { name: "Suivant", exact: true }).click();
+  await expect(
+    panel
+      .getByRole("group", { name: /Destinations/ })
+      .getByRole("button", { name: "Turquie", pressed: true }),
+  ).toBeVisible();
+
+  // Fermeture à la croix : démontage complet
+  await panel.getByRole("button", { name: "Fermer", exact: true }).click();
+  await expect(panel).toHaveCount(0);
+});
+
+test("navigation : pages publiques, détail offre et détail destination", async ({
   page,
 }) => {
   await page.goto("/");
@@ -98,51 +139,118 @@ test("navigation : les pages publiques affichent leurs contenus", async ({
   await scrollThroughPage(page);
   await assertNoBrokenImages(page);
 
-  // Ancre d'une section (lien du panneau hero)
-  await page.goto("/galerie#turquie");
-  await expect(page.getByRole("heading", { name: "Turquie" })).toBeVisible();
-
   // Services
   await header.getByRole("link", { name: "Services" }).click();
   await expect(page).toHaveURL(/\/services$/);
-  await expect(page.locator('a[aria-label^="Demander"]')).toHaveCount(6);
-  await expect(page.getByText("1. On discute")).toBeVisible();
+  await expect(page.getByText("1. Vous décrivez")).toBeVisible();
+
+  // Page détail d'une offre : l'offre est pré-cochée dans le wizard (étape 2)
+  await page.locator('a[href="/services/voyages-organises"]').first().click();
+  await expect(page).toHaveURL(/\/services\/voyages-organises$/);
+  await expect(
+    page.getByRole("heading", { name: "Voyages organisés" }),
+  ).toBeVisible();
+  await page.locator("#vt-service-fullName").fill("E2E Preflight");
+  await page.locator("#vt-service-phone").fill("0555000011");
+  await page.locator("#vt-service-email").fill("preflight@e2e.dz");
+  await page.getByRole("button", { name: "Suivant", exact: true }).click();
+  await expect(
+    page
+      .getByRole("group", { name: /Offres concernées/ })
+      .getByRole("button", { name: "Voyages organisés", pressed: true }),
+  ).toBeVisible();
+  await assertNoBrokenImages(page);
+
+  // Page détail d'une destination : Turquie pré-cochée dans le wizard
+  await page.goto("/destinations/turquie");
+  await expect(
+    page.getByRole("heading", { name: /Partez en Turquie/ }),
+  ).toBeVisible();
+  await page.locator("#vt-destination-fullName").fill("E2E Preflight");
+  await page.locator("#vt-destination-phone").fill("0555000011");
+  await page.locator("#vt-destination-email").fill("preflight@e2e.dz");
+  await page.getByRole("button", { name: "Suivant", exact: true }).click();
+  await expect(
+    page
+      .getByRole("group", { name: /Destinations/ })
+      .getByRole("button", { name: "Turquie", pressed: true }),
+  ).toBeVisible();
+  await assertNoBrokenImages(page);
 
   // À propos : texte officiel du brief
-  await header.getByRole("link", { name: "À propos" }).click();
+  await page.goto("/a-propos");
   await expect(page.getByText(/agence de voyage située à Sétif/)).toBeVisible();
 
-  // Contact : formulaire + coordonnées en bas de page d'accueil (section
-  // #contact — plus de page dédiée)
+  // Contact : formulaire complet + carte Google + téléphone (accueil)
   await page.goto("/#contact");
   await expect(page.getByRole("heading", { name: /devis gratuit/ })).toBeVisible();
   await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
-  await expect(page.locator("#vt-name")).toBeVisible();
+  await expect(page.locator('iframe[title^="Carte —"]')).toBeVisible();
+  await expect(
+    page.locator('a[href*="google.com/maps"]').filter({ hasText: "Sétif" }).first(),
+  ).toBeVisible();
+  await expect(page.locator("#vt-form-fullName")).toBeVisible();
 });
 
-test("contact : validation serveur puis envoi réussi", async ({ page }) => {
+test("devis : validation par étape puis demande enregistrée", async ({ page }) => {
   await page.goto("/#contact");
 
-  // Soumission à vide (noValidate) → erreurs de champ renvoyées par l'API
-  await page.getByRole("button", { name: /Envoyer ma demande/ }).click();
-  await expect(page.getByText("Le nom est requis.")).toBeVisible();
+  // Étape 1 soumise à vide → erreurs de validation bloquantes
+  await page.getByRole("button", { name: "Suivant", exact: true }).click();
+  await expect(page.getByText("Le nom complet est requis.")).toBeVisible();
   await expect(page.getByText("Adresse e-mail invalide.")).toBeVisible();
 
-  // Envoi valide → écran de succès ; la demande part par e-mail
-  // (notification), il n'y a plus de stockage côté admin.
-  await page.locator("#vt-name").fill(CONTACT_NAME);
-  await page.locator("#vt-email").fill("vitrine@e2e.dz");
-  await page.locator("#vt-phone").fill("0555999888");
+  // Étape 1 valide → étape 2
+  await page.locator("#vt-form-fullName").fill(DEMANDE_NAME);
+  await page.locator("#vt-form-phone").fill("0555999888");
+  await page.locator("#vt-form-email").fill("vitrine@e2e.dz");
+  await page.getByRole("button", { name: "Suivant", exact: true }).click();
+
+  // Étape 2 : au moins une destination
+  await page.getByRole("button", { name: "Suivant", exact: true }).click();
+  await expect(page.getByText("Choisissez au moins une destination.")).toBeVisible();
   await page
-    .locator("#vt-message")
-    .fill(
-      "Bonjour, je souhaite un devis pour un séjour en Turquie pour 4 personnes (test E2E vitrine).",
-    );
-  await page.getByRole("button", { name: /Envoyer ma demande/ }).click();
-  await expect(page.getByText("Message envoyé !")).toBeVisible();
+    .getByRole("group", { name: /Destinations/ })
+    .getByRole("button", { name: "Turquie", exact: false })
+    .first()
+    .click();
+
+  // Calendrier maison : mois suivant, départ le 10, retour le 20
+  await page.locator("#vt-form-dates").click();
+  const calendar = page.getByRole("dialog", { name: "Choisir les dates du voyage" });
+  await calendar.getByRole("button", { name: "Mois suivant" }).click();
+  await calendar.getByRole("button", { name: /\b10\b/ }).click();
+  await calendar.getByRole("button", { name: /\b20\b/ }).click();
+  await expect(calendar).toHaveCount(0); // fermé après la plage complète
+  // La flèche d'itinéraire vit dans le libellé accessible (visuel : connecteurs)
+  await expect(page.locator("#vt-form-dates")).toHaveAttribute("aria-label", /→/);
+
+  await page.locator("#vt-form-departureCity").fill("Sétif");
+  await page.getByRole("button", { name: "Ajouter un adulte" }).click();
+  await page.getByRole("button", { name: "Suivant", exact: true }).click();
+
+  // Étape 3 : type, budget (dropdown maison), hébergement, récap, envoi
+  await page
+    .getByRole("group", { name: /Type de voyage/ })
+    .getByRole("button", { name: "En famille" })
+    .click();
+  await page.locator("#vt-form-budget").click();
+  await page.getByRole("option", { name: "100 000 à 200 000 DA" }).click();
+  await page
+    .getByRole("group", { name: /Hébergement/ })
+    .getByRole("button", { name: "Hôtel 4★" })
+    .click();
+  await page
+    .locator("#vt-form-notes")
+    .fill("Séjour en Turquie pour 4 personnes (test E2E vitrine).");
+  await expect(page.getByText("Récapitulatif", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Confirmer ma demande" }).click();
+  await expect(page.getByText("Demande envoyée !")).toBeVisible();
 });
 
-test("mobile : menu, hero et galerie sans débordement", async ({ page }) => {
+test("mobile : menu, panneau composer et galerie sans débordement", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await assertNoHorizontalOverflow(page);
@@ -176,6 +284,9 @@ test("SEO : titres, description, canonical, robots et sitemap", async ({
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
   await expect(page.locator("html")).toHaveAttribute("lang", "fr");
 
+  // Le sitemap embarque désormais les pages détail publiées
+  const sitemap = await (await page.request.get("/sitemap.xml")).text();
+  expect(sitemap).toContain("/services/voyages-organises");
+  expect(sitemap).toContain("/destinations/turquie");
   expect((await page.request.get("/robots.txt")).status()).toBe(200);
-  expect((await page.request.get("/sitemap.xml")).status()).toBe(200);
 });

@@ -30,7 +30,7 @@ test("les pages de récupération restent accessibles sans session", async ({
 test("échec de connexion avec un mauvais mot de passe", async ({ page }) => {
   await page.goto("/admin/login");
   await page.getByLabel("Email").fill(process.env.ADMIN_EMAIL ?? "");
-  await page.getByLabel("Mot de passe").fill("mauvais-mot-de-passe");
+  await page.getByLabel("Mot de passe", { exact: true }).fill("mauvais-mot-de-passe");
   await page.getByRole("button", { name: "Se connecter" }).click();
   await expect(page.getByText("Email ou mot de passe incorrect.")).toBeVisible();
 });
@@ -46,7 +46,7 @@ test("pages publiques : la vitrine reste accessible sans session", async ({
   page,
 }) => {
   // Balayage léger : le parcours complet vitrine vit dans vitrine.spec.ts.
-  for (const path of ["/", "/a-propos", "/services", "/galerie", "/contact"]) {
+  for (const path of ["/", "/a-propos", "/services", "/galerie", "/destinations/turquie"]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   }

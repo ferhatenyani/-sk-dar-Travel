@@ -3,7 +3,8 @@ import type { InputHTMLAttributes, LabelHTMLAttributes, TextareaHTMLAttributes }
 import { cn } from "@/lib/cn";
 
 const controlBase =
-  "w-full rounded-lg border bg-surface text-ink text-sm placeholder:text-ink-faint " +
+  // text-base (16 px) partout : iOS zoome au focus de tout contrôle < 16 px.
+  "w-full rounded-lg border bg-surface text-ink text-base placeholder:text-ink-faint " +
   "transition-colors duration-100 " +
   "hover:border-line-strong " +
   "focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/25 " +

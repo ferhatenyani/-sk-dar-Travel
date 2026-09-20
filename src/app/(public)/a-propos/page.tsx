@@ -3,15 +3,15 @@ import Image from "next/image";
 import { ArrowRight, BadgeCheck, Compass, Handshake, Wallet } from "lucide-react";
 
 import {
-  ButtonLink,
   Container,
   Eyebrow,
   SectionHeading,
 } from "@/components/vitrine/primitives";
 import { Reveal } from "@/components/vitrine/reveal";
 import { CtaBand } from "@/components/vitrine/cta-band";
+import { ComposerTrigger } from "@/components/vitrine/composer";
 import { getSettings } from "@/lib/public-data";
-import { vitrineSettings, waLink, WA_MESSAGE } from "@/lib/vitrine";
+import { vitrineSettings } from "@/lib/vitrine";
 
 export const revalidate = 60;
 
@@ -92,13 +92,10 @@ export default async function AProposPage() {
                   L’équipe Üsküdar Travel — Sétif, Algérie
                 </p>
                 <div className="pt-2">
-                  <ButtonLink
-                    href={waLink(settings.whatsappNumber, WA_MESSAGE)}
-                    external
-                  >
-                    Faire connaissance sur WhatsApp
+                  <ComposerTrigger size="lg">
+                    Faire connaissance — composer mon voyage
                     <ArrowRight className="h-4 w-4" />
-                  </ButtonLink>
+                  </ComposerTrigger>
                 </div>
               </div>
             </Reveal>
@@ -167,7 +164,6 @@ export default async function AProposPage() {
       </section>
 
       <CtaBand
-        settings={settings}
         title="Prêt à boucler vos valises ?"
         sub="Un appel ou un message suffit : nous construisons votre voyage ensemble, sans engagement."
       />

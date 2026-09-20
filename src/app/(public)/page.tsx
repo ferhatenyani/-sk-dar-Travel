@@ -15,7 +15,9 @@ import {
 
 import { db } from "@/db";
 import { services } from "@/db/schema";
+import { AccueilScroll } from "@/components/vitrine/accueil-scroll";
 import { ContactSection } from "@/components/vitrine/contact-section";
+import { ComposerTrigger } from "@/components/vitrine/composer";
 import { DestinationStrip } from "@/components/vitrine/destination-panel";
 import { HeroCarousel, type HeroSlide } from "@/components/vitrine/hero-carousel";
 import {
@@ -25,16 +27,12 @@ import {
 } from "@/components/vitrine/primitives";
 import { Reveal } from "@/components/vitrine/reveal";
 import { ServiceCard, type ServiceCardData } from "@/components/vitrine/service-card";
-import { getPublishedGallery, getSettings } from "@/lib/public-data";
 import {
-  destinationImage,
-  siteUrl,
-  vitrineSettings,
-  waDestinationLink,
-  waLink,
-  waServiceLink,
-  WA_MESSAGE,
-} from "@/lib/vitrine";
+  getPublishedGallery,
+  getPublishedOffers,
+  getSettings,
+} from "@/lib/public-data";
+import { destinationImage, siteUrl, vitrineSettings } from "@/lib/vitrine";
 
 export const revalidate = 60;
 
@@ -68,9 +66,10 @@ export async function generateMetadata() {
 }
 
 export default async function HomePage() {
-  const [rawSettings, gallery] = await Promise.all([
+  const [rawSettings, gallery, offers] = await Promise.all([
     getSettings(),
     getPublishedGallery(),
+    getPublishedOffers(),
   ]);
   const settings = vitrineSettings(rawSettings);
 
@@ -90,8 +89,8 @@ export default async function HomePage() {
         }));
 
   // Diapositives du hero : la diapo d'accueil (contenu CMS) puis une par
-  // destination (photo = première carte publiée de la section galerie),
-  // avec un message WhatsApp prérempli propre à chaque destination.
+  // destination (photo = première carte publiée de la section galerie).
+  // Chaque destination pré-coche son choix dans le panneau « Composer ».
   const heroSlides: HeroSlide[] = [
     {
       slug: "accueil",
@@ -99,7 +98,6 @@ export default async function HomePage() {
       headline: heroHeadline(settings.heroTitle),
       text: settings.heroText,
       imageUrl: settings.heroImageUrl,
-      waMessage: WA_MESSAGE,
     },
     ...destinations.map((d) => ({
       slug: d.slug,
@@ -107,7 +105,7 @@ export default async function HomePage() {
       headline: `Partez en ${d.title}`,
       text: `Nos séjours organisés et sur-mesure en ${d.title} : vols, hôtels et transferts pris en charge depuis Sétif.`,
       imageUrl: d.imageUrl,
-      waMessage: waDestinationLink(settings.whatsappNumber, d.title),
+      destinationSlug: d.slug,
     })),
   ];
 
@@ -118,7 +116,6 @@ export default async function HomePage() {
     description: settings.seoDescription,
     url: siteUrl(),
     telephone: "+213770505715",
-    email: settings.email,
     address: {
       "@type": "PostalAddress",
       addressLocality: "Sétif",
@@ -128,6 +125,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <AccueilScroll />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -135,7 +133,7 @@ export default async function HomePage() {
 
       {/* ——— Hero façon inspi3 : carte photo, destinations en défilement auto ——— */}
       <div className="w-full px-4 pt-1.5 sm:px-6 sm:pt-2 lg:px-10 lg:pt-2.5">
-        <HeroCarousel slides={heroSlides} whatsappNumber={settings.whatsappNumber} />
+        <HeroCarousel slides={heroSlides} />
       </div>
 
       {/* ——— Destinations : carrousel sous le hero (inspi3) ——— */}
@@ -168,7 +166,7 @@ export default async function HomePage() {
               </ButtonLink>
             </div>
           </Reveal>
-          <HomeServices settings={settings} />
+          <HomeServices />
         </Container>
       </section>
 
@@ -193,12 +191,10 @@ export default async function HomePage() {
                 ))}
               </ul>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <ButtonLink
-                  href={waLink(settings.whatsappNumber, WA_MESSAGE)}
-                  external
-                >
+                <ComposerTrigger size="lg">
                   Discuter de mon projet
-                </ButtonLink>
+                  <ArrowRight className="h-4 w-4" />
+                </ComposerTrigger>
                 <ButtonLink href="/a-propos" variant="outline">
                   Découvrir l’agence
                 </ButtonLink>
@@ -240,13 +236,17 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      <ContactSection settings={settings} />
+      <ContactSection
+        settings={settings}
+        destinations={destinations}
+        offers={offers}
+      />
     </>
   );
 }
 
 /** Grille des services publiés (données DB). */
-async function HomeServices({ settings }: { settings: ReturnType<typeof vitrineSettings> }) {
+async function HomeServices() {
   const rows = await db
     .select()
     .from(services)
@@ -256,8 +256,8 @@ async function HomeServices({ settings }: { settings: ReturnType<typeof vitrineS
   if (rows.length === 0) {
     return (
       <p className="mt-10 rounded-3xl border border-dashed border-ice-strong bg-white p-8 text-center text-sm text-night-muted">
-        Nos services arrivent très bientôt — contactez-nous directement sur
-        WhatsApp pour préparer votre voyage.
+        Nos services arrivent très bientôt — utilisez le formulaire ci-dessous
+        pour préparer votre voyage.
       </p>
     );
   }
@@ -283,10 +283,7 @@ async function HomeServices({ settings }: { settings: ReturnType<typeof vitrineS
           // l'item étiré.
           className="w-[78%] max-w-[320px] shrink-0 snap-center sm:w-auto sm:max-w-none sm:shrink"
         >
-          <ServiceCard
-            service={service}
-            waHref={waServiceLink(settings.whatsappNumber, service.title)}
-          />
+          <ServiceCard service={service} />
         </Reveal>
       ))}
     </div>

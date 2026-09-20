@@ -1,13 +1,11 @@
-// Galerie — sections thématiques, cartes façon magazine : photo, légende
-// éditoriale sous l'image, pastille numérotée et demande de devis par carte.
+// Galerie — sections thématiques empilées, cartes en arche (inspi1).
 import Image from "next/image";
-import { ArrowUpRight, Images } from "lucide-react";
+import { Images } from "lucide-react";
 
 import { CtaBand } from "@/components/vitrine/cta-band";
 import { Container, Eyebrow } from "@/components/vitrine/primitives";
 import { Reveal } from "@/components/vitrine/reveal";
-import { getPublishedGallery, getSettings } from "@/lib/public-data";
-import { vitrineSettings, waLink } from "@/lib/vitrine";
+import { getPublishedGallery } from "@/lib/public-data";
 
 export const revalidate = 60;
 
@@ -18,97 +16,29 @@ export const metadata = {
   alternates: { canonical: "/galerie" },
 };
 
-type GalleryCardData = {
-  title: string;
-  description: string | null;
-  imageUrl: string;
-  alt: string;
-};
-
-/** Carte photo façon éditorial : image + légende détachée en dessous. */
-function GalleryCard({
-  card,
-  index,
-  waHref,
-  staggered,
-}: {
-  card: GalleryCardData;
-  index: number;
-  waHref: string;
-  staggered: boolean;
-}) {
-  return (
-    <a
-      href={waHref}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Demander des informations sur « ${card.title} »`}
-      className={`group flex h-full flex-col ${staggered ? "lg:translate-y-6" : ""}`}
-    >
-      <figure className="relative aspect-[4/5] overflow-hidden rounded-[18px] bg-ice ring-1 ring-night/10 transition-shadow duration-300 group-hover:shadow-[0_28px_56px_-28px_rgba(15,23,42,0.45)]">
-        <Image
-          src={card.imageUrl}
-          alt={card.alt || card.title}
-          fill
-          sizes="(max-width: 1024px) 250px, 22vw"
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
-        />
-        {/* Pastille numérotée + flèche d'action sur la photo */}
-        <span className="absolute top-3 left-3 inline-flex h-7 items-center rounded-full border border-white/25 bg-night/35 px-2.5 text-[11px] font-bold tracking-widest text-white tabular-nums backdrop-blur-md">
-          {String(index + 1).padStart(2, "0")}
-        </span>
-        <span
-          aria-hidden
-          className="absolute top-3 right-3 grid h-8 w-8 translate-y-1 place-items-center rounded-full bg-white text-night opacity-0 shadow-md transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100"
-        >
-          <ArrowUpRight className="h-4 w-4" />
-        </span>
-      </figure>
-      <div className="px-1 pt-3">
-        <h3 className="text-[15px] leading-snug font-bold text-night transition-colors group-hover:text-cobalt">
-          {card.title}
-        </h3>
-        {card.description ? (
-          <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-night-muted">
-            {card.description}
-          </p>
-        ) : (
-          <p className="mt-1 text-[13px] leading-relaxed text-night-faint">
-            Intéressé(e) ? Un message suffit pour intégrer cette étape à votre voyage.
-          </p>
-        )}
-      </div>
-    </a>
-  );
-}
-
 export default async function GaleriePage() {
-  const [settings, gallery] = await Promise.all([
-    getSettings(),
-    getPublishedGallery(),
-  ]);
-  const s = vitrineSettings(settings);
+  const gallery = await getPublishedGallery();
 
   return (
     <>
       {/* Bandeau d’en-tête */}
-      <section>
+      <section className="bg-gradient-to-b from-ice/70 to-white">
         <Container className="pt-10 pb-12 text-center sm:pt-14 sm:pb-14">
           <Reveal>
             <Eyebrow className="justify-center">Galerie</Eyebrow>
             <h1 className="mx-auto mt-3 max-w-2xl text-4xl font-bold tracking-tight text-night text-balance sm:text-5xl">
-              Votre prochaine escale, en images
+              Nos destinations en images
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-night-muted">
-              Chaque photo est une étape que nous pouvons intégrer à votre
-              voyage — envoyez-nous un coup de cœur, on s’occupe du reste.
+              Laissez-vous inspirer — chaque image correspond à une étape que
+              nous pouvons intégrer à votre voyage.
             </p>
           </Reveal>
         </Container>
       </section>
 
       {/* Sections empilées */}
-      <section className="pb-14 sm:pb-20">
+      <section className="py-6 sm:py-10">
         <Container>
           {gallery.length === 0 ? (
             <p className="rounded-3xl border border-dashed border-ice-strong bg-white p-8 text-center text-sm text-night-muted">
@@ -116,23 +46,11 @@ export default async function GaleriePage() {
               découvrir nos destinations.
             </p>
           ) : (
-            <div className="space-y-16 sm:space-y-24">
-              {gallery.map((section, sectionIndex) => (
+            <div className="space-y-16 sm:space-y-20">
+              {gallery.map((section) => (
                 <div key={section.id} id={section.slug} className="scroll-mt-24">
                   <Reveal>
-                    {/* En-tête de section : filet, numéro, titre, méta */}
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs font-bold tracking-widest text-cobalt tabular-nums">
-                        {String(sectionIndex + 1).padStart(2, "0")}
-                      </span>
-                      <span aria-hidden className="h-px flex-1 bg-ice-strong/70" />
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-ice bg-white px-3 py-1.5 text-xs font-semibold text-night-soft">
-                        <Images className="h-3.5 w-3.5 text-cobalt" />
-                        {section.cards.length}{" "}
-                        {section.cards.length > 1 ? "cartes" : "carte"}
-                      </span>
-                    </div>
-                    <div className="mt-5 flex flex-wrap items-end justify-between gap-3">
+                    <div className="flex flex-wrap items-end justify-between gap-3">
                       <div className="max-w-xl">
                         <h2 className="text-2xl font-bold tracking-tight text-night sm:text-3xl">
                           {section.title}
@@ -143,25 +61,48 @@ export default async function GaleriePage() {
                           </p>
                         ) : null}
                       </div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-ice bg-white px-3 py-1.5 text-xs font-semibold text-night-soft">
+                        <Images className="h-3.5 w-3.5 text-cobalt" />
+                        {section.cards.length}{" "}
+                        {section.cards.length > 1 ? "cartes" : "carte"}
+                      </span>
                     </div>
                   </Reveal>
 
-                  <div className="vt-no-scrollbar -mx-4 mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-ps-4 px-4 pb-4 sm:-mx-6 sm:scroll-ps-6 sm:px-6 lg:auto-rows-fr lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:scroll-ps-0 lg:px-0">
+                  <div className="vt-no-scrollbar -mx-4 mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
                     {section.cards.map((card, i) => (
                       <Reveal
                         key={card.title}
                         delay={(i % 4) * 60}
                         className="w-[230px] shrink-0 snap-start sm:w-[250px] lg:w-auto"
                       >
-                        <GalleryCard
-                          card={card}
-                          index={i}
-                          staggered={i % 2 === 1}
-                          waHref={waLink(
-                            s.whatsappNumber,
-                            `Bonjour Üsküdar Travel ! J'ai repéré « ${card.title} » dans votre galerie. Comment l'intégrer à mon voyage ?`,
-                          )}
-                        />
+                        <figure
+                          className={`group relative block aspect-[4/5] overflow-hidden rounded-3xl ring-1 ring-night/10 ${
+                            i % 2 === 1 ? "lg:translate-y-6" : ""
+                          }`}
+                        >
+                          <Image
+                            src={card.imageUrl}
+                            alt={card.alt || card.title}
+                            fill
+                            sizes="(max-width: 1024px) 250px, 22vw"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div
+                            aria-hidden
+                            className="absolute inset-0 bg-gradient-to-t from-night/85 via-night/20 to-transparent"
+                          />
+                          <figcaption className="absolute inset-x-3.5 bottom-3.5">
+                            <p className="text-[15px] leading-snug font-bold text-white">
+                              {card.title}
+                            </p>
+                            {card.description ? (
+                              <p className="mt-1 text-xs leading-relaxed text-white/75 line-clamp-2">
+                                {card.description}
+                              </p>
+                            ) : null}
+                          </figcaption>
+                        </figure>
                       </Reveal>
                     ))}
                   </div>
@@ -173,8 +114,7 @@ export default async function GaleriePage() {
       </section>
 
       <CtaBand
-        settings={s}
-        title="Un coup de cœur pour une destination ?"
+        title="Une destination vous fait de l'œil ?"
         sub="Dites-nous laquelle : nous vous préparons un programme et un devis personnalisés, sans engagement."
       />
     </>

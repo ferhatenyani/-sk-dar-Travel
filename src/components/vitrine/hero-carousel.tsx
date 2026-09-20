@@ -12,9 +12,7 @@ import {
 import { ArrowUpRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 
 import { cn } from "@/lib/cn";
-import { waLink } from "@/lib/vitrine";
-
-import { ContactButton } from "./site-header";
+import { useComposer } from "./composer";
 
 export type HeroSlide = {
   /** Clé stable. */
@@ -25,8 +23,8 @@ export type HeroSlide = {
   /** Paragraphe d'accompagnement (diapositive d'accueil seulement). */
   text?: string;
   imageUrl: string;
-  /** Message WhatsApp prérempli propre à la diapositive. */
-  waMessage?: string;
+  /** Destination pré-cochée à l'ouverture du panneau (hors accueil). */
+  destinationSlug?: string;
 };
 
 /** Durée d'une diapositive (Ken Burns et chrono de défilement auto). */
@@ -60,13 +58,12 @@ const FALLBACK_ACCENT = "#facc15";
  */
 export function HeroCarousel({
   slides,
-  whatsappNumber,
   className = "",
 }: {
   slides: HeroSlide[];
-  whatsappNumber: string;
   className?: string;
 }) {
+  const { open } = useComposer();
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState<1 | -1>(1);
   const [kbFocus, setKbFocus] = useState(false);
@@ -222,28 +219,32 @@ export function HeroCarousel({
               {active.text}
             </p>
           ) : null}
+          {/* CTA unique : le même wizard partout (pré-coche la destination
+              affichée). Un second bouton « devis » ferait doublon. */}
           <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7 sm:gap-4">
-            <a
-              href={waLink(whatsappNumber, active.waMessage)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() =>
+                open(
+                  active.destinationSlug
+                    ? { destinations: [active.destinationSlug] }
+                    : undefined,
+                )
+              }
               className="vt-hero-cta group inline-flex items-center gap-3 rounded-full bg-white py-1.5 pl-6 pr-1.5 text-sm font-semibold text-night shadow-[0_18px_40px_-16px_rgba(15,23,42,0.65)] transition-all duration-200 hover:bg-ice active:scale-[0.98]"
             >
               Composer mon voyage
               <span className="vt-hero-cta-circle grid h-9 w-9 place-items-center rounded-full bg-night text-white transition-all duration-300 group-hover:rotate-45">
                 <ArrowUpRight className="h-4 w-4" />
               </span>
-            </a>
-            <ContactButton onDark />
+            </button>
           </div>
         </div>
 
         {/* Rangée de contrôle dans le flux : points à gauche, pause et
-            flèches à droite — aucun recouvrement du contenu possible.
-            Sur les écrans bas (téléphone en paysage), la marge droite
-            réserve la zone du bouton WhatsApp flottant. */}
+            flèches à droite — aucun recouvrement du contenu possible. */}
         {slides.length > 1 && (
-          <div className="mt-3 flex items-center justify-between gap-3 sm:mt-4 [@media(max-height:520px)]:pr-20">
+          <div className="mt-3 flex items-center justify-between gap-3 sm:mt-4">
             {/* Points simples : le point actif s'allonge ; zone cliquable
                 élargie (p-2) pour le tactile. */}
             <div className="-m-2 flex items-center p-2">

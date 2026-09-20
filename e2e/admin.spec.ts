@@ -1,11 +1,11 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 /**
  * Parcours ADMINISTRATEUR (session injectée via storageState du projet setup).
  * Suite séquentielle : les données de test « E2E » sont supprimées par les
  * tests eux-mêmes ; déconnexion + reconnexion en fin de fichier.
- * NB : la fonctionnalité « Messages » a été supprimée — les demandes de
- * contact partent par e-mail et ne transitent plus par l'admin.
+ * Les demandes de voyage du formulaire public atterrissent dans la section
+ * « Demandes » — le test dédié s'appuie sur la demande créée par vitrine.spec.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -13,6 +13,13 @@ test.describe.configure({ mode: "serial" });
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "uskudar.travel19@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "";
 const AUTH_FILE = "playwright/.auth/admin.json";
+// Nom distinct de la demande créée par vitrine.spec (les deux coexistent).
+const DEMANDE_NAME = "E2E Admin Demande";
+
+/** Date future (AAAA-MM-JJ) pour les payloads API. */
+function futureDate(daysAhead: number): string {
+  return new Date(Date.now() + daysAhead * 86_400_000).toISOString().slice(0, 10);
+}
 
 const PNG_1PX = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
@@ -26,7 +33,7 @@ test("tableau de bord : modules accessibles", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Administration", exact: true }),
   ).toBeVisible();
-  for (const label of ["Services", "Galerie", "Contenus", "Compte"]) {
+  for (const label of ["Demandes", "Services", "Galerie", "Contenus", "Compte"]) {
     await expect(
       page.getByRole("link", { name: label, exact: true }),
     ).toBeVisible();
@@ -192,40 +199,116 @@ test("compte : changement de mot de passe puis retour à l'original", async ({
   await page.context().storageState({ path: AUTH_FILE });
 });
 
-/* ——— API contact (sans stockage : e-mail uniquement) ——— */
+/* ——— Demandes de voyage ——— */
 
-test("API contact : validation, honeypot et envoi accepté", async ({
+test("demandes : liste, détail, statut puis suppression", async ({
+  page,
   request,
 }) => {
+  // Crée une demande de référence via l'API publique (suite autonome),
+  // avec une offre concernée (multi-offres : tableau de slugs).
+  const created = await request.post("/api/demandes", {
+    data: {
+      fullName: DEMANDE_NAME,
+      phone: "0555999888",
+      email: "vitrine@e2e.dz",
+      destinations: ["turquie"],
+      offers: ["voyages-organises"],
+      departureCity: "Sétif",
+      departureDate: futureDate(42),
+      adults: 3,
+      children: 0,
+      tripType: "famille",
+      budget: "100k-200k",
+      accommodation: "hotel-4",
+      notes: "Séjour en Turquie pour 4 personnes (test E2E vitrine).",
+    },
+  });
+  expect(created.status()).toBe(200);
+
+  // Elle apparaît dans la liste admin, avec le badge multi-offres
+  await page.goto("/admin/demandes");
+  const row = page.locator("main ul li").filter({ hasText: DEMANDE_NAME });
+  await expect(row).toBeVisible();
+  await expect(row).toContainText("Turquie");
+  await expect(row).toContainText("Nouvelle");
+  await expect(row).toContainText("1 offre");
+
+  // Détail : toutes les données du formulaire, dont le titre de l'offre
+  await row.getByRole("link").first().click();
+  await page.waitForURL(/\/admin\/demandes\/\d+$/);
+  await expect(page.getByText("0555999888")).toBeVisible();
+  await expect(page.getByText("Voyages organisés")).toBeVisible();
+  await expect(page.getByText("Séjour en famille")).toBeVisible();
+  await expect(page.getByText("100 000 à 200 000 DA")).toBeVisible();
+
+  // Statut (dropdown 100 % maison) + note interne
+  await page.locator("#status").click();
+  await page.getByRole("option", { name: "En cours" }).click();
+  await page.locator("#adminNote").fill("Devis envoyé (E2E).");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByText("Demande mise à jour.")).toBeVisible();
+  // Rechargement : assertion sur l'état persisté en base (pas sur l'UI optimiste)
+  await page.reload();
+  await expect(page.locator("#status")).toContainText("En cours");
+
+  // Suppression (window.confirm : à accepter explicitement)
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Supprimer la demande" }).click();
+  await page.waitForURL("**/admin/demandes");
+  await expect(page.locator("main ul li").filter({ hasText: DEMANDE_NAME })).toHaveCount(0);
+});
+
+/* ——— API demandes (stockage en base) ——— */
+
+test("API demandes : validation, honeypot et enregistrement", async ({
+  request,
+}) => {
+  const payload = {
+    fullName: "E2E API Contact",
+    phone: "0555000000",
+    email: "e2e@contact.dz",
+    destinations: ["turquie"],
+    offers: ["voyages-organises"],
+    departureCity: "Sétif",
+    departureDate: futureDate(30),
+    adults: 2,
+    children: 1,
+    tripType: "famille",
+    budget: "50k-100k",
+    accommodation: "hotel-4",
+    notes: "Payload de test E2E pour l'API des demandes.",
+  };
+
   // Requête invalide → 400 avec erreurs de champ
-  const invalid = await request.post("/api/contact", {
-    data: { name: "X", email: "pas-un-email", message: "court" },
+  const invalid = await request.post("/api/demandes", {
+    data: { fullName: "X", email: "pas-un-email" },
   });
   expect(invalid.status()).toBe(400);
   const invalidBody = await invalid.json();
   expect(invalidBody.fieldErrors.email).toBeTruthy();
 
-  // Honeypot rempli → faux succès, rien n'est envoyé
-  const spam = await request.post("/api/contact", {
-    data: {
-      name: "E2E Bot",
-      email: "bot@spam.example",
-      message: "spam spam spam spam spam spam",
-      website: "http://spam.example",
-    },
+  // Honeypot rempli → faux succès, rien n'est enregistré
+  const spam = await request.post("/api/demandes", {
+    data: { ...payload, website: "http://spam.example" },
   });
   expect(spam.status()).toBe(200);
 
-  // Message légitime → accepté (notification e-mail, ignorée sans clé Resend)
-  const valid = await request.post("/api/contact", {
-    data: {
-      name: "E2E Contact",
-      email: "e2e@contact.dz",
-      phone: "0555000000",
-      message: "Message de test E2E pour l'API de contact de la vitrine.",
-    },
-  });
+  // Demande légitime → acceptée et stockée en base
+  const valid = await request.post("/api/demandes", { data: payload });
   expect(valid.status()).toBe(200);
+
+  // Destination inconnue → rejetée même si le reste est valide
+  const bogus = await request.post("/api/demandes", {
+    data: { ...payload, destinations: ["atlantide"] },
+  });
+  expect(bogus.status()).toBe(400);
+
+  // Offre inconnue → ignorée silencieusement (le reste est enregistré)
+  const unknownOffer = await request.post("/api/demandes", {
+    data: { ...payload, fullName: "E2E API Offre Inconnue", offers: ["atlantide"] },
+  });
+  expect(unknownOffer.status()).toBe(200);
 });
 
 /* ——— Admin responsive (mobile) ——— */
@@ -263,10 +346,13 @@ test("reconnexion avec le mot de passe d'origine (revert vérifié)", async ({
   await page.context().clearCookies();
   await page.goto("/admin/login");
   await page.getByLabel("Email").fill(ADMIN_EMAIL);
-  await page.getByLabel("Mot de passe").fill(ADMIN_PASSWORD);
+  await page.getByLabel("Mot de passe", { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Se connecter" }).click();
   await page.waitForURL("**/admin");
   await expect(
     page.getByRole("heading", { name: "Administration", exact: true }),
   ).toBeVisible();
+  // Session revalidée dans le storageState : le projet « responsive », qui
+  // passe après celui-ci, en dépend pour ses passages admin.
+  await page.context().storageState({ path: AUTH_FILE });
 });

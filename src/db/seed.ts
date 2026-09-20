@@ -55,9 +55,7 @@ async function seedSettings() {
       heroImageUrl: IMG.hero,
       aboutText: TEXTE_OFFICIEL,
       phone: "0770505715",
-      whatsappNumber: "+213770505715",
-      email: "uskudar.travel19@gmail.com",
-      address: "Sétif, Algérie",
+      address: "6C23+XHW, Sétif",
       seoTitle: "Üsküdar Travel — Agence de voyage à Sétif",
       seoDescription: TEXTE_OFFICIEL,
     })

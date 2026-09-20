@@ -17,8 +17,6 @@ export type SettingsFormValues = Pick<
   | "heroText"
   | "aboutText"
   | "phone"
-  | "whatsappNumber"
-  | "email"
   | "address"
   | "seoTitle"
   | "seoDescription"
@@ -122,39 +120,16 @@ export function SettingsForm({ settings }: { settings: SettingsFormValues }) {
             </Field>
 
             <Field
-              label="Numéro WhatsApp"
-              htmlFor="whatsappNumber"
-              hint="Format international, ex. +213770505715 — utilisé par le bouton WhatsApp flottant du site."
-              error={fe.whatsappNumber}
+              label="Adresse"
+              htmlFor="address"
+              hint="Plus Code ou adresse affichée sur le site et la carte."
+              error={fe.address}
             >
-              <Input
-                id="whatsappNumber"
-                name="whatsappNumber"
-                required
-                defaultValue={settings.whatsappNumber}
-                placeholder="+213770505715"
-                invalid={Boolean(fe.whatsappNumber)}
-              />
-            </Field>
-
-            <Field label="Adresse e-mail" htmlFor="email" error={fe.email}>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                defaultValue={settings.email}
-                placeholder="uskudar.travel19@gmail.com"
-                invalid={Boolean(fe.email)}
-              />
-            </Field>
-
-            <Field label="Adresse" htmlFor="address" hint="Optionnelle." error={fe.address}>
               <Input
                 id="address"
                 name="address"
                 defaultValue={settings.address}
-                placeholder="Sétif, Algérie"
+                placeholder="6C23+XHW, Sétif"
                 invalid={Boolean(fe.address)}
               />
             </Field>

@@ -7,6 +7,22 @@ export const TEXTE_OFFICIEL =
   "billetterie, transferts et assurance. Prise en charge complète pour des vacances " +
   "et séjours sereins en famille, en groupe.";
 
+/**
+ * Adresse réelle de l'agence : Plus Code Google Maps, cliquable et affiché
+ * sur la carte intégrée de la section contact.
+ */
+export const ADDRESS_QUERY = "6C23+XHW, Sétif";
+
+/** Lien « itinéraire » : ouvre Google Maps sur le pin de l'agence. */
+export function mapsLink(): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS_QUERY)}`;
+}
+
+/** Carte intégrée (iframe Google, sans clé API). */
+export function mapsEmbedUrl(): string {
+  return `https://www.google.com/maps?q=${encodeURIComponent(ADDRESS_QUERY)}&hl=fr&z=16&output=embed`;
+}
+
 /** Réglages avec valeurs de repli pour la vitrine (CMS = source de vérité). */
 export function vitrineSettings(settings: SiteSettings | null) {
   return {
@@ -15,9 +31,7 @@ export function vitrineSettings(settings: SiteSettings | null) {
     heroImageUrl: settings?.heroImageUrl || "/images/hero.webp",
     aboutText: settings?.aboutText || TEXTE_OFFICIEL,
     phone: settings?.phone || "0770505715",
-    whatsappNumber: settings?.whatsappNumber || "+213770505715",
-    email: settings?.email || "uskudar.travel19@gmail.com",
-    address: settings?.address || "Sétif, Algérie",
+    address: settings?.address || ADDRESS_QUERY,
     logoUrl: settings?.logoUrl || "/logo.jpg",
     facebookUrl: settings?.facebookUrl || "",
     instagramUrl: settings?.instagramUrl || "",
@@ -27,31 +41,6 @@ export function vitrineSettings(settings: SiteSettings | null) {
 }
 
 export type VitrineSettings = ReturnType<typeof vitrineSettings>;
-
-/** Lien wa.me : numéro réduit aux chiffres + message prérempli optionnel. */
-export function waLink(whatsappNumber: string, message?: string): string {
-  const digits = (whatsappNumber || "+213770505715").replace(/\D/g, "");
-  const base = `https://wa.me/${digits}`;
-  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
-}
-
-export const WA_MESSAGE =
-  "Bonjour Üsküdar Travel ! Je souhaite organiser un voyage. Pouvez-vous me renseigner ?";
-
-export function waServiceLink(whatsappNumber: string, service: string): string {
-  return waLink(
-    whatsappNumber,
-    `Bonjour Üsküdar Travel ! Je suis intéressé(e) par votre service « ${service} ». Pouvez-vous me donner plus d'informations ?`,
-  );
-}
-
-/** Lien WhatsApp prérempli avec la destination affichée dans le hero. */
-export function waDestinationLink(whatsappNumber: string, destination: string): string {
-  return waLink(
-    whatsappNumber,
-    `Bonjour Üsküdar Travel ! Je souhaite organiser un voyage en ${destination}. Pouvez-vous me faire un devis ?`,
-  );
-}
 
 /** Formats d'affichage des coordonnées. */
 export function telHref(phone: string): string {

@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  date,
   integer,
   pgTable,
   primaryKey,
@@ -142,6 +143,41 @@ export const sectionCardsRelations = relations(sectionCards, ({ one }) => ({
   }),
 }));
 
+/* ——— CMS : demandes de voyage (formulaire « Composer mon voyage ») ——— */
+
+/** Cycle de vie d'une demande côté admin. */
+export const TRIP_STATUSES = ["nouvelle", "en_cours", "traitee", "archivee"] as const;
+export type TripStatus = (typeof TRIP_STATUSES)[number];
+
+export const tripRequests = pgTable("trip_requests", {
+  id: serial("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email").notNull(),
+  /** Destinations choisies : slugs des sections galerie (+ « autre »). */
+  destinations: text("destinations").array().notNull().default(sql`'{}'::text[]`),
+  /** Offres concernées : slugs + titres figés (survivent à une suppression d'offre). */
+  offers: text("offers").array().notNull().default(sql`'{}'::text[]`),
+  offerTitles: text("offer_titles").array().notNull().default(sql`'{}'::text[]`),
+  departureCity: text("departure_city").notNull(),
+  /** Dates ISO (AAAA-MM-JJ) : tri naturel, aucun fuseau à gérer. */
+  departureDate: date("departure_date").notNull(),
+  returnDate: date("return_date"),
+  adults: integer("adults").notNull().default(1),
+  children: integer("children").notNull().default(0),
+  tripType: text("trip_type").notNull(),
+  budget: text("budget").notNull(),
+  accommodation: text("accommodation").notNull(),
+  notes: text("notes"),
+  status: text("status").$type<TripStatus>().notNull().default("nouvelle"),
+  adminNote: text("admin_note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
 /* ——— CMS : réglages du site (ligne unique id = 1) ——— */
 
 export const siteSettings = pgTable("site_settings", {
@@ -152,8 +188,6 @@ export const siteSettings = pgTable("site_settings", {
   heroImageUrl: text("hero_image_url"),
   aboutText: text("about_text").notNull().default(""),
   phone: text("phone").notNull().default(""),
-  whatsappNumber: text("whatsapp_number").notNull().default(""),
-  email: text("email").notNull().default(""),
   address: text("address").notNull().default(""),
   logoUrl: text("logo_url"),
   facebookUrl: text("facebook_url"),
@@ -173,3 +207,4 @@ export type GallerySection = typeof gallerySections.$inferSelect;
 export type GalleryCard = typeof galleryCards.$inferSelect;
 export type SectionCard = typeof sectionCards.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;
+export type TripRequest = typeof tripRequests.$inferSelect;
