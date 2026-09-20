@@ -69,12 +69,16 @@ export default async function GaleriePage() {
                     </div>
                   </Reveal>
 
-                  <div className="vt-no-scrollbar -mx-4 mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
+                  {/* Mobile/tablet : carrousel à accroche. La bord gauche
+                      (pl-7) donne un point de départ décalé à droite — la
+                      1re carte ne touche pas le bord de l'écran — et
+                      scroll-pl aligne les cartes snappées sur ce départ. */}
+                  <div className="vt-no-scrollbar -mx-4 mt-7 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-pl-7 pl-7 pr-4 pb-4 sm:-mx-6 sm:scroll-pl-8 sm:gap-5 sm:pl-8 sm:pr-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-5 lg:overflow-visible lg:scroll-pl-0 lg:px-0">
                     {section.cards.map((card, i) => (
                       <Reveal
                         key={card.title}
                         delay={(i % 4) * 60}
-                        className="w-[230px] shrink-0 snap-start sm:w-[250px] lg:w-auto"
+                        className="w-[74vw] max-w-[270px] shrink-0 snap-start sm:w-[250px] lg:w-auto"
                       >
                         <figure
                           className={`group relative block aspect-[4/5] overflow-hidden rounded-3xl ring-1 ring-night/10 ${

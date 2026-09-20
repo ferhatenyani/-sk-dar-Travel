@@ -33,10 +33,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      {/* suppressHydrationWarning : certaines extensions navigateur (ex.
-          ColorZilla) ajoutent des attributs sur <body> avant React — faux
-          positif d'hydratation, on ne veut pas l'erreur console. */}
+    // suppressHydrationWarning sur html et body : certaines extensions
+    // navigateur (ColorZilla, traducteurs…) ajoutent classes/attributs sur
+    // ces balises avant React — faux positifs d'hydratation.
+    <html
+      lang="fr"
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-dvh" suppressHydrationWarning>
         {children}
       </body>
