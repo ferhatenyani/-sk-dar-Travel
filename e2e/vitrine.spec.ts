@@ -205,14 +205,18 @@ test("navigation : pages publiques, détail offre et détail destination", async
 test("devis : validation par étape puis demande enregistrée", async ({ page }) => {
   await page.goto("/#contact");
 
-  // Étape 1 soumise à vide → erreurs de validation bloquantes
+  // Étape 1 soumise à vide → erreurs de validation bloquantes (sauf e-mail,
+  // optionnel)
   await page.getByRole("button", { name: "Suivant", exact: true }).click();
   await expect(page.getByText("Le nom complet est requis.")).toBeVisible();
-  await expect(page.getByText("Adresse e-mail invalide.")).toBeVisible();
+  await expect(page.getByText("Le numéro de téléphone est requis.")).toBeVisible();
 
-  // Étape 1 valide → étape 2
+  // E-mail optionnel mais validé s'il est renseigné
   await page.locator("#vt-form-fullName").fill(DEMANDE_NAME);
   await page.locator("#vt-form-phone").fill("0555999888");
+  await page.locator("#vt-form-email").fill("pas-un-email");
+  await page.getByRole("button", { name: "Suivant", exact: true }).click();
+  await expect(page.getByText("Adresse e-mail invalide.")).toBeVisible();
   await page.locator("#vt-form-email").fill("vitrine@e2e.dz");
   await page.getByRole("button", { name: "Suivant", exact: true }).click();
 
@@ -283,18 +287,19 @@ test("voyages organisés : accueil → modale détail → wizard pré-rempli", a
   await expect(modal.getByText(/J5 – Cappadoce/)).toBeVisible();
   await expect(modal.getByText("Inclus", { exact: true })).toBeVisible();
 
-  // « Sélectionner ce voyage » → wizard pré-rempli (desktop : accueil #contact)
+  // « Sélectionner ce voyage » → mode express (desktop : accueil #contact) :
+  // une seule étape, le départ choisi affiché en tag
   await modal.getByRole("button", { name: "Sélectionner ce voyage" }).click();
   await expect(modal).toHaveCount(0);
+  const form = page.locator("[data-vt-composer]");
   await expect(page.locator("#vt-form-fullName")).toBeInViewport({ timeout: 20_000 });
+  await expect(form.getByText("Cappadoce & Istanbul — 8 jours")).toBeVisible();
+  await expect(form.getByRole("button", { name: "Suivant", exact: true })).toHaveCount(0);
   await page.locator("#vt-form-fullName").fill("E2E Vitrine Voyage");
   await page.locator("#vt-form-phone").fill("0555000011");
   await page.locator("#vt-form-email").fill("voyage@e2e.dz");
-  await page.getByRole("button", { name: "Suivant", exact: true }).click();
-  // Le menu « Voyage organisé » (étape 2) affiche le voyage sélectionné
-  await expect(page.locator("#vt-form-voyage")).toContainText(
-    "Cappadoce & Istanbul — 8 jours",
-  );
+  await form.getByRole("button", { name: "Confirmer ma demande" }).click();
+  await expect(page.getByText("Demande envoyée !")).toBeVisible();
 
   // « Voir plus » : listing complet sans modale, puis ouverture par carte.
   // (Pas de décompte exact : la page est en ISR et peut refléter
@@ -328,15 +333,14 @@ test("mobile : voyages organisés — modale puis feuille pré-remplie", async (
   await modal.getByRole("button", { name: "Sélectionner ce voyage" }).click();
   const sheet = page.getByRole("dialog", { name: "Composer mon voyage" });
   await expect(sheet).toBeVisible();
+  // Mode express : le départ choisi en tag, une seule étape, e-mail optionnel
+  // (non renseigné ici) — envoi direct.
+  await expect(sheet.getByText("Le Caire & la Mer Rouge — 7 jours")).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Suivant", exact: true })).toHaveCount(0);
   await sheet.locator("#vt-modal-fullName").fill("E2E Mobile Voyage");
   await sheet.locator("#vt-modal-phone").fill("0555000011");
-  await sheet.locator("#vt-modal-email").fill("mobile@e2e.dz");
-  await sheet.getByRole("button", { name: "Suivant", exact: true }).click();
-  await expect(sheet.locator("#vt-modal-voyage")).toContainText(
-    "Le Caire & la Mer Rouge — 7 jours",
-  );
-  await sheet.getByRole("button", { name: "Fermer", exact: true }).click();
-  await expect(sheet).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Confirmer ma demande" }).click();
+  await expect(sheet.getByText("Demande envoyée !")).toBeVisible();
 });
 
 test("mobile : menu, panneau composer et galerie sans débordement", async ({

@@ -48,7 +48,7 @@ export default async function DemandeDetailPage({
   const facts: { label: string; value: string }[] = [
     {
       label: "Destinations",
-      value: demande.destinations.map(destinationTitle).join(", "),
+      value: demande.destinations.map(destinationTitle).join(", ") || "—",
     },
     {
       label: "Offres concernées",
@@ -60,18 +60,30 @@ export default async function DemandeDetailPage({
       label: "Voyage organisé",
       value: demande.voyageTitle ?? "Aucun",
     },
-    { label: "Ville de départ", value: demande.departureCity },
-    { label: "Départ", value: formatDate(demande.departureDate) },
+    { label: "Ville de départ", value: demande.departureCity ?? "—" },
+    { label: "Départ", value: demande.departureDate ? formatDate(demande.departureDate) : "—" },
     { label: "Retour", value: demande.returnDate ? formatDate(demande.returnDate) : "—" },
     {
       label: "Voyageurs",
-      value: `${demande.adults} adulte${demande.adults > 1 ? "s" : ""}${
-        demande.children > 0 ? ` + ${demande.children} enfant${demande.children > 1 ? "s" : ""}` : ""
-      }`,
+      value:
+        demande.adults != null
+          ? `${demande.adults} adulte${demande.adults > 1 ? "s" : ""}${
+              demande.children ? ` + ${demande.children} enfant${demande.children > 1 ? "s" : ""}` : ""
+            }`
+          : "—",
     },
-    { label: "Type de voyage", value: labelOf(TRIP_TYPES, demande.tripType) },
-    { label: "Budget / personne", value: labelOf(BUDGET_RANGES, demande.budget) },
-    { label: "Hébergement", value: labelOf(ACCOMMODATIONS, demande.accommodation) },
+    {
+      label: "Type de voyage",
+      value: demande.tripType ? labelOf(TRIP_TYPES, demande.tripType) : "—",
+    },
+    {
+      label: "Budget / personne",
+      value: demande.budget ? labelOf(BUDGET_RANGES, demande.budget) : "—",
+    },
+    {
+      label: "Hébergement",
+      value: demande.accommodation ? labelOf(ACCOMMODATIONS, demande.accommodation) : "—",
+    },
   ];
 
   return (
@@ -127,13 +139,20 @@ export default async function DemandeDetailPage({
                 <Phone className="size-4 text-ink-faint" />
                 {demande.phone}
               </a>
-              <a
-                href={`mailto:${demande.email}`}
-                className="flex items-center gap-2.5 rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink transition-colors hover:border-navy-border hover:text-navy"
-              >
-                <Mail className="size-4 shrink-0 text-ink-faint" />
-                <span className="truncate">{demande.email}</span>
-              </a>
+              {demande.email ? (
+                <a
+                  href={`mailto:${demande.email}`}
+                  className="flex items-center gap-2.5 rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink transition-colors hover:border-navy-border hover:text-navy"
+                >
+                  <Mail className="size-4 shrink-0 text-ink-faint" />
+                  <span className="truncate">{demande.email}</span>
+                </a>
+              ) : (
+                <p className="flex items-center gap-2.5 rounded-lg border border-dashed border-line px-3 py-2 text-sm text-ink-faint">
+                  <Mail className="size-4 shrink-0" />
+                  Pas d’e-mail renseigné
+                </p>
+              )}
             </div>
           </div>
 

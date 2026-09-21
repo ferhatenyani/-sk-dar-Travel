@@ -376,6 +376,19 @@ test("API demandes : validation, honeypot et enregistrement", async ({
   const valid = await request.post("/api/demandes", { data: payload });
   expect(valid.status()).toBe(200);
 
+  // Demande express (voyage organisé sélectionné) : coordonnées seules,
+  // sans e-mail ni dates → acceptée. (« x-forwarded-for » dédié : la suite
+  // épuise juste le quota de 10 demandes / 5 min du bucket local.)
+  const express = await request.post("/api/demandes", {
+    data: {
+      fullName: "E2E API Express",
+      phone: "0555000011",
+      voyage: "cappadoce-istanbul-8-jours",
+    },
+    headers: { "x-forwarded-for": "198.51.100.10" },
+  });
+  expect(express.status()).toBe(200);
+
   // Destination inconnue → rejetée même si le reste est valide
   const bogus = await request.post("/api/demandes", {
     data: { ...payload, destinations: ["atlantide"] },

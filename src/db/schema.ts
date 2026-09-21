@@ -182,8 +182,13 @@ export const tripRequests = pgTable("trip_requests", {
   id: serial("id").primaryKey(),
   fullName: text("full_name").notNull(),
   phone: text("phone").notNull(),
-  email: text("email").notNull(),
-  /** Destinations choisies : slugs des sections galerie (+ « autre »). */
+  /** E-mail optionnel : certains voyageurs ne laissent qu'un téléphone. */
+  email: text("email"),
+  /**
+   * Champs du wizard « classique » rendus optionnels : une demande issue
+   * d'un voyage organisé (mode express) ne porte que nom, téléphone, e-mail
+   * et le voyage sélectionné — le conseiller complète au rappel.
+   */
   destinations: text("destinations").array().notNull().default(sql`'{}'::text[]`),
   /** Offres concernées : slugs + titres figés (survivent à une suppression d'offre). */
   offers: text("offers").array().notNull().default(sql`'{}'::text[]`),
@@ -191,15 +196,15 @@ export const tripRequests = pgTable("trip_requests", {
   /** Voyage organisé choisi : slug + titre figés (survivent à une suppression). */
   voyageSlug: text("voyage_slug"),
   voyageTitle: text("voyage_title"),
-  departureCity: text("departure_city").notNull(),
+  departureCity: text("departure_city"),
   /** Dates ISO (AAAA-MM-JJ) : tri naturel, aucun fuseau à gérer. */
-  departureDate: date("departure_date").notNull(),
+  departureDate: date("departure_date"),
   returnDate: date("return_date"),
-  adults: integer("adults").notNull().default(1),
-  children: integer("children").notNull().default(0),
-  tripType: text("trip_type").notNull(),
-  budget: text("budget").notNull(),
-  accommodation: text("accommodation").notNull(),
+  adults: integer("adults"),
+  children: integer("children"),
+  tripType: text("trip_type"),
+  budget: text("budget"),
+  accommodation: text("accommodation"),
   notes: text("notes"),
   status: text("status").$type<TripStatus>().notNull().default("nouvelle"),
   adminNote: text("admin_note"),

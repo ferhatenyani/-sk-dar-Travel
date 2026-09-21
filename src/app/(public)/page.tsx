@@ -139,20 +139,6 @@ export default async function HomePage() {
         <HeroCarousel slides={heroSlides} />
       </div>
 
-      {/* ——— Destinations : carrousel sous le hero (inspi3) ——— */}
-      <section className="mx-auto w-full max-w-6xl px-4 pt-9 sm:px-6 sm:pt-12 lg:px-10">
-        <Reveal>
-          <SectionHeading
-            eyebrow="Destinations phares"
-            title="Des escales qui donnent envie de faire ses valises"
-            sub="De l'Algérie à la Malaisie : nos destinations les plus demandées — il n'y a plus qu'à choisir."
-          />
-        </Reveal>
-        <Reveal delay={100} className="mt-7 sm:mt-9">
-          <DestinationStrip destinations={destinations} />
-        </Reveal>
-      </section>
-
       {/* ——— Voyages organisés : carrousel des départs programmés ——— */}
       {/* Masquée tant qu'aucun voyage n'est publié (layout propre, vide ne
           doit rien montrer). Une carte ouvre la modale de détail sur la page
@@ -177,6 +163,20 @@ export default async function HomePage() {
           </Reveal>
         </section>
       ) : null}
+
+      {/* ——— Destinations : carrousel sous le hero (inspi3) ——— */}
+      <section className="mx-auto w-full max-w-6xl px-4 pt-9 sm:px-6 sm:pt-12 lg:px-10">
+        <Reveal>
+          <SectionHeading
+            eyebrow="Destinations phares"
+            title="Des escales qui donnent envie de faire ses valises"
+            sub="De l'Algérie à la Malaisie : nos destinations les plus demandées — il n'y a plus qu'à choisir."
+          />
+        </Reveal>
+        <Reveal delay={100} className="mt-7 sm:mt-9">
+          <DestinationStrip destinations={destinations} />
+        </Reveal>
+      </section>
 
       {/* ——— Services ——— */}
       <section className="py-10 sm:py-16 lg:py-20">

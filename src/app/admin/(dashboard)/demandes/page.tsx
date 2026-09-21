@@ -119,7 +119,8 @@ export default async function DemandesPage({
                   <div className="min-w-0">
                     <p className="truncate font-medium text-ink">{d.fullName}</p>
                     <p className="mt-0.5 text-sm text-ink-muted">
-                      {d.phone} · {d.email}
+                      {d.phone}
+                      {d.email ? ` · ${d.email}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -135,18 +136,26 @@ export default async function DemandesPage({
 
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-secondary">
                   <span className="font-medium">
-                    {d.destinations.map(destinationTitle).join(", ")}
+                    {d.destinations.map(destinationTitle).join(", ") || "—"}
                   </span>
-                  <span className="text-ink-faint">·</span>
-                  <span>
-                    Départ {formatDate(d.departureDate)}
-                    {d.returnDate ? ` → retour ${formatDate(d.returnDate)}` : ""}
-                  </span>
-                  <span className="text-ink-faint">·</span>
-                  <span>
-                    {d.adults} adulte{d.adults > 1 ? "s" : ""}
-                    {d.children > 0 ? ` + ${d.children} enfant${d.children > 1 ? "s" : ""}` : ""}
-                  </span>
+                  {d.departureDate ? (
+                    <>
+                      <span className="text-ink-faint">·</span>
+                      <span>
+                        Départ {formatDate(d.departureDate)}
+                        {d.returnDate ? ` → retour ${formatDate(d.returnDate)}` : ""}
+                      </span>
+                    </>
+                  ) : null}
+                  {d.adults != null ? (
+                    <>
+                      <span className="text-ink-faint">·</span>
+                      <span>
+                        {d.adults} adulte{d.adults > 1 ? "s" : ""}
+                        {d.children ? ` + ${d.children} enfant${d.children > 1 ? "s" : ""}` : ""}
+                      </span>
+                    </>
+                  ) : null}
                 </div>
 
                 <p className="mt-2 text-xs text-ink-faint">

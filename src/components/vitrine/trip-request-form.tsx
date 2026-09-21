@@ -288,6 +288,11 @@ export function TripRequestForm({
   const [accommodation, setAccommodation] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Mode express : ouvert depuis un voyage organisé précis (menu retiré du
+  // formulaire classique, « voyage » ne peut venir que d'un pré-remplissage)
+  // → une seule étape, coordonnées + tag du départ choisi.
+  const express = Boolean(voyage);
+
   // Référence « boarding pass » (générée côté client après montage : aucune
   // discordance d'hydratation, le placeholder s'affiche au premier paint).
   const [reference, setReference] = useState("······");
@@ -379,7 +384,9 @@ export function TripRequestForm({
       prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
     );
 
-  /** Validation client par étape (mêmes messages que la validation zod). */
+  /** Validation client par étape (mêmes messages que la validation zod).
+   *  Mode express (voyage organisé présélectionné) : seules les coordonnées
+   *  sont demandées, les étapes 2-3 ne sont pas validées. */
   function validate(current: number): FieldErrors {
     const errs: FieldErrors = {};
     if (current === 0) {
@@ -387,9 +394,11 @@ export function TripRequestForm({
       if (phone.trim().length < 6) errs.phone = "Le numéro de téléphone est requis.";
       else if (!/^[+0-9 ()./-]+$/.test(phone.trim()))
         errs.phone = "Le téléphone ne peut contenir que des chiffres et + ( ) - .";
-      if (!/^\S+@\S+\.\S+$/.test(email.trim())) errs.email = "Adresse e-mail invalide.";
+      // E-mail optionnel : vérifié seulement s'il est renseigné.
+      if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim()))
+        errs.email = "Adresse e-mail invalide.";
     }
-    if (current === 1) {
+    if (current === 1 && !express) {
       if (selectedDestinations.length === 0)
         errs.destinations = "Choisissez au moins une destination.";
       if (departureCity.trim().length < 2)
@@ -401,7 +410,7 @@ export function TripRequestForm({
       if (range?.to && range.to <= range.from)
         errs.returnDate = "Le retour doit être après le départ.";
     }
-    if (current === 2) {
+    if (current === 2 && !express) {
       if (!tripType) errs.tripType = "Choisissez un type de voyage.";
       if (!budget) errs.budget = "Choisissez une fourchette de budget.";
       if (!accommodation) errs.accommodation = "Choisissez un hébergement.";
@@ -424,7 +433,8 @@ export function TripRequestForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const errs = validate(2);
+    // Express : envoi direct depuis l'étape coordonnées.
+    const errs = express ? validate(0) : validate(2);
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       scrollErrorKeyRef.current = Object.keys(errs)[0];
@@ -443,18 +453,20 @@ export function TripRequestForm({
           fullName,
           phone,
           email,
-          destinations: selectedDestinations,
-          offers: selectedOffers,
+          // Express : les champs du wizard classique ne sont plus demandés —
+          // on ne stocke rien de fabrique (null plutot que valeurs par défaut).
+          destinations: express ? [] : selectedDestinations,
+          offers: express ? [] : selectedOffers,
           voyage,
-          departureCity,
-          departureDate: range?.from ?? "",
-          returnDate: range?.to ?? "",
-          adults,
-          children,
-          tripType,
-          budget,
-          accommodation,
-          notes,
+          departureCity: express ? "" : departureCity,
+          departureDate: express ? "" : (range?.from ?? ""),
+          returnDate: express ? "" : (range?.to ?? ""),
+          adults: express ? null : adults,
+          children: express ? null : children,
+          tripType: express ? "" : tripType,
+          budget: express ? "" : budget,
+          accommodation: express ? "" : accommodation,
+          notes: express ? "" : notes,
           website: honeypot,
         }),
       });
@@ -551,6 +563,7 @@ export function TripRequestForm({
   const destinationTitle = (slug: string) =>
     destinations.find((d) => d.slug === slug)?.title ??
     (slug === OTHER_DESTINATION ? "À définir" : slug);
+  const voyageTitle = voyages.find((v) => v.slug === voyage)?.title ?? voyage;
   const rangeLabel = range
     ? range.to
       ? `${fmtDay(range.from)} → ${fmtDay(range.to)} ${range.to.slice(0, 4)}`
@@ -564,12 +577,13 @@ export function TripRequestForm({
       data-vt-composer
       className="scroll-mt-24 overflow-visible rounded-[28px] border border-ice bg-white shadow-[0_24px_56px_-32px_rgba(15,23,42,0.25)]"
     >
-      <div className="lg:grid lg:grid-cols-[272px_minmax(0,1fr)]">
-        {/* ——— Stepper latéral (desktop) ——— */}
-        <aside
-          aria-label="Progression du formulaire"
-          className="hidden flex-col gap-2 rounded-l-[28px] border-r border-ice bg-page/80 p-5 lg:flex"
-        >
+      <div className={cn(!express && "lg:grid lg:grid-cols-[272px_minmax(0,1fr)]")}>
+        {/* ——— Stepper latéral (desktop) — masqué en express ——— */}
+        {!express ? (
+          <aside
+            aria-label="Progression du formulaire"
+            className="hidden flex-col gap-2 rounded-l-[28px] border-r border-ice bg-page/80 p-5 lg:flex"
+          >
           {STEPS.map((s, i) => {
             const done = i < step;
             const current = i === step;
@@ -630,44 +644,77 @@ export function TripRequestForm({
             );
           })}
         </aside>
+        ) : null}
 
         {/* ——— Contenu de l'étape ——— */}
         <div className="min-w-0 p-5 sm:p-8 lg:p-10">
-          {/* Progression compacte (mobile / tablette) */}
-          <div className="mb-6 lg:hidden">
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-mono text-[11px] font-bold tracking-[0.18em] text-cobalt uppercase">
-                Étape {step + 1}/3 · {STEPS[step].label}
-              </p>
+          {express ? (
+            /* Mode express : pas de progression, le départ choisi en tag. */
+            <div className="mb-6 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-mono text-[11px] font-bold tracking-[0.18em] text-cobalt uppercase">
+                  Voyage organisé
+                </p>
+                <span
+                  className={cn(
+                    "mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-night bg-night px-4 py-2",
+                    "text-sm font-semibold text-white shadow-[0_8px_18px_-10px_rgba(15,23,42,0.8)]",
+                  )}
+                >
+                  <Users className="h-4 w-4 shrink-0 text-citrine" aria-hidden />
+                  <span className="truncate">{voyageTitle}</span>
+                </span>
+              </div>
               {onClose ? (
                 <button
                   type="button"
                   onClick={onClose}
                   aria-label="Fermer"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-ice bg-white text-night transition-colors hover:bg-ice/60"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-ice bg-white text-night transition-colors hover:bg-ice/60"
                 >
                   <X className="h-4 w-4" />
                 </button>
               ) : null}
             </div>
-            <div className="mt-2.5 flex gap-1.5" aria-hidden>
-              {STEPS.map((s, i) => (
-                <span
-                  key={s.label}
-                  className={cn(
-                    "h-1 flex-1 rounded-full",
-                    i < step && "bg-cobalt",
-                    i === step && "bg-night",
-                    i > step && "bg-ice",
-                  )}
-                />
-              ))}
-            </div>
-          </div>
+          ) : (
+            <>
+              {/* Progression compacte (mobile / tablette) */}
+              <div className="mb-6 lg:hidden">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-mono text-[11px] font-bold tracking-[0.18em] text-cobalt uppercase">
+                    Étape {step + 1}/3 · {STEPS[step].label}
+                  </p>
+                  {onClose ? (
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      aria-label="Fermer"
+                      className="grid h-9 w-9 place-items-center rounded-full border border-ice bg-white text-night transition-colors hover:bg-ice/60"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+                <div className="mt-2.5 flex gap-1.5" aria-hidden>
+                  {STEPS.map((s, i) => (
+                    <span
+                      key={s.label}
+                      className={cn(
+                        "h-1 flex-1 rounded-full",
+                        i < step && "bg-cobalt",
+                        i === step && "bg-night",
+                        i > step && "bg-ice",
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
 
-          <p className="hidden font-mono text-[11px] font-bold tracking-[0.18em] text-cobalt uppercase lg:block">
-            Étape {step + 1} sur 3
-          </p>
+              <p className="hidden font-mono text-[11px] font-bold tracking-[0.18em] text-cobalt uppercase lg:block">
+                Étape {step + 1} sur 3
+              </p>
+            </>
+          )}
 
           <h3
             ref={headingRef}
@@ -677,10 +724,12 @@ export function TripRequestForm({
               "lg:mt-1",
             )}
           >
-            {STEPS[step].title}
+            {express ? "Vos coordonnées" : STEPS[step].title}
           </h3>
           <p className="mt-1.5 max-w-lg text-[15px] leading-relaxed text-night-muted">
-            {STEPS[step].sub}
+            {express
+              ? "Laissez-nous vos coordonnées : un conseiller vous rappelle pour confirmer votre place sur ce départ."
+              : STEPS[step].sub}
           </p>
 
           <div className="mt-6 border-t border-ice pt-6">
@@ -731,12 +780,11 @@ export function TripRequestForm({
 
                   <div className="sm:col-span-2">
                     <label htmlFor={id("email")} className={labelCls}>
-                      E-mail <span className="text-cobalt">*</span>
+                      E-mail{optionalHint}
                     </label>
                     <input
                       id={id("email")}
                       type="email"
-                      required
                       autoComplete="email"
                       placeholder="vous@exemple.com — pour recevoir le devis"
                       value={email}
@@ -783,32 +831,6 @@ export function TripRequestForm({
                     </div>
                     <FieldError message={errors.destinations} />
                   </div>
-
-                  {/* Départs organisés : sélection unique, optionnelle */}
-                  {voyages.length > 0 ? (
-                    <div>
-                      <span id={`${id("voyage")}-label`} className={labelCls}>
-                        Voyage organisé{optionalHint}
-                      </span>
-                      <p className="mt-0.5 text-xs text-night-muted">
-                        Un départ en groupe déjà programmé ? Sélectionnez-le,
-                        sinon laissez vide.
-                      </p>
-                      <Dropdown
-                        id={id("voyage")}
-                        ariaLabel="Voyage organisé"
-                        tone="vitrine"
-                        placeholder="Aucun voyage organisé"
-                        value={voyage}
-                        onChange={setVoyage}
-                        options={[
-                          { value: "", label: "Aucun voyage organisé" },
-                          ...voyages.map((v) => ({ value: v.slug, label: v.title })),
-                        ]}
-                        className="mt-2.5"
-                      />
-                    </div>
-                  ) : null}
 
                   {offers.length > 0 ? (
                     <div>
@@ -1159,7 +1181,7 @@ export function TripRequestForm({
       <div className="flex flex-col-reverse gap-3 rounded-b-[28px] border-t border-ice bg-page/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <p className="font-mono text-xs text-night-faint">N° {reference}</p>
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
-          {step > 0 ? (
+          {step > 0 && !express ? (
             <button
               type="button"
               onClick={() => setStep((s) => Math.max(0, s - 1))}
@@ -1170,7 +1192,7 @@ export function TripRequestForm({
             </button>
           ) : null}
 
-          {step < 2 ? (
+          {!express && step < 2 ? (
             <button
               type="button"
               onClick={goNext}

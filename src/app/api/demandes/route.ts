@@ -19,6 +19,10 @@ function todayIso(): string {
   return new Date(now.getTime() - offsetMs).toISOString().slice(0, 10);
 }
 
+/** « » → undefined : le formulaire envoie tous les champs, même vides. */
+const emptyToUndefined = (v: unknown) =>
+  typeof v === "string" && v.trim() === "" ? undefined : v;
+
 const demandSchema = z
   .object({
     fullName: z
@@ -32,11 +36,18 @@ const demandSchema = z
       .min(6, "Le numéro de téléphone est requis.")
       .max(30, "Le numéro est trop long.")
       .regex(/^[+0-9 ()./-]+$/, "Le téléphone ne peut contenir que des chiffres et + ( ) - ."),
-    email: z.string().trim().max(200).email("Adresse e-mail invalide."),
+    // E-mail optionnel : validé seulement s'il est renseigné.
+    email: z
+      .union([z.literal(""), z.string().trim().max(200).email("Adresse e-mail invalide.")])
+      .optional()
+      .default(""),
+    // Destinations : optionnelles — le mode express (voyage organisé choisi)
+    // ne les demande plus, le voyage porte déjà la destination.
     destinations: z
       .array(z.string().trim().min(1).max(60))
-      .min(1, "Choisissez au moins une destination.")
-      .max(10, "Dix destinations maximum."),
+      .max(10, "Dix destinations maximum.")
+      .optional()
+      .default([]),
     // Offres concernées : 0 à 5 slugs (multi-sélection du formulaire).
     offers: z
       .array(z.string().trim().min(1).max(80))
@@ -45,15 +56,15 @@ const demandSchema = z
       .default([]),
     // Voyage organisé choisi : slug unique, optionnel.
     voyage: z.string().trim().max(80).optional().default(""),
-    departureCity: z
-      .string()
-      .trim()
-      .min(2, "La ville de départ est requise.")
-      .max(100, "La ville est trop longue."),
+    // Champs « wizard classique » : optionnels (mode express).
+    departureCity: z.string().trim().max(100, "La ville est trop longue.").optional().default(""),
     departureDate: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date de départ invalide.")
-      .refine((v) => v >= todayIso(), "La date de départ doit être future."),
+      .union([
+        z.literal(""),
+        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date de départ invalide."),
+      ])
+      .optional()
+      .default(""),
     returnDate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Date de retour invalide.")
@@ -63,17 +74,34 @@ const demandSchema = z
       .number()
       .int("Doit être un entier.")
       .min(1, "Au moins un adulte.")
-      .max(30, "Trop de voyageurs — appelez-nous pour un grand groupe."),
-    children: z.coerce.number().int("Doit être un entier.").min(0).max(30).default(0),
-    tripType: z.enum(TRIP_TYPE_VALUES as [string, ...string[]], {
-      message: "Choisissez un type de voyage.",
-    }),
-    budget: z.enum(BUDGET_VALUES as [string, ...string[]], {
-      message: "Choisissez une fourchette de budget.",
-    }),
-    accommodation: z.enum(ACCOMMODATION_VALUES as [string, ...string[]], {
-      message: "Choisissez un hébergement.",
-    }),
+      .max(30, "Trop de voyageurs — appelez-nous pour un grand groupe.")
+      .nullable()
+      .optional(),
+    children: z.coerce.number().int("Doit être un entier.").min(0).max(30).nullable().optional(),
+    tripType: z.preprocess(
+      emptyToUndefined,
+      z
+        .enum(TRIP_TYPE_VALUES as [string, ...string[]], {
+          message: "Choisissez un type de voyage.",
+        })
+        .optional(),
+    ),
+    budget: z.preprocess(
+      emptyToUndefined,
+      z
+        .enum(BUDGET_VALUES as [string, ...string[]], {
+          message: "Choisissez une fourchette de budget.",
+        })
+        .optional(),
+    ),
+    accommodation: z.preprocess(
+      emptyToUndefined,
+      z
+        .enum(ACCOMMODATION_VALUES as [string, ...string[]], {
+          message: "Choisissez un hébergement.",
+        })
+        .optional(),
+    ),
     notes: z
       .string()
       .trim()
@@ -84,8 +112,12 @@ const demandSchema = z
     website: z.string().optional().default(""),
   })
   .refine(
-    (d) => !d.returnDate || d.returnDate > d.departureDate,
+    (d) => !d.returnDate || !d.departureDate || d.returnDate > d.departureDate,
     { path: ["returnDate"], message: "Le retour doit être après le départ." },
+  )
+  .refine(
+    (d) => !d.departureDate || d.departureDate >= todayIso(),
+    { path: ["departureDate"], message: "La date de départ doit être future." },
   );
 
 export async function POST(request: Request) {
@@ -129,8 +161,9 @@ export async function POST(request: Request) {
     .where(eq(gallerySections.published, true));
   const allowed = new Set(publishedSlugs.map((s) => s.slug));
   allowed.add(OTHER_DESTINATION);
+  // Destination « autre » reste admise même sans section publiée.
   const destinations = data.destinations.filter((slug) => allowed.has(slug));
-  if (destinations.length === 0) {
+  if (data.destinations.length > 0 && destinations.length === 0) {
     return NextResponse.json(
       { error: "Données invalides.", fieldErrors: { destinations: "Choisissez au moins une destination valide." } },
       { status: 400 },
@@ -171,20 +204,20 @@ export async function POST(request: Request) {
   await db.insert(tripRequests).values({
     fullName: data.fullName,
     phone: data.phone,
-    email: data.email,
+    email: data.email || null,
     destinations,
     offers,
     offerTitles,
     voyageSlug,
     voyageTitle,
-    departureCity: data.departureCity,
-    departureDate: data.departureDate,
+    departureCity: data.departureCity || null,
+    departureDate: data.departureDate || null,
     returnDate: data.returnDate ? data.returnDate : null,
-    adults: data.adults,
-    children: data.children,
-    tripType: data.tripType,
-    budget: data.budget,
-    accommodation: data.accommodation,
+    adults: data.adults ?? null,
+    children: data.children ?? null,
+    tripType: data.tripType || null,
+    budget: data.budget || null,
+    accommodation: data.accommodation || null,
     notes: data.notes || null,
   });
 

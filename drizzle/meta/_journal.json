@@ -22,6 +22,13 @@
       "when": 1789905095155,
       "tag": "0002_serious_mad_thinker",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789955025013,
+      "tag": "0003_public_kulan_gath",
+      "breakpoints": true
     }
   ]
 }
